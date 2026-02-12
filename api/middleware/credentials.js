@@ -4,7 +4,7 @@ exports.getOrgCredentials = (req, res, next) => {
     let orgCredentials = req.cookies.orgCredentials;
     orgCredentials = crypt.decrypt(orgCredentials);
     orgCredentials = JSON.parse(orgCredentials);
-
+    console.log("#####orgCredentials", orgCredentials);
     req.orgNum = orgCredentials.orgNum;
     req.ledgerUser = orgCredentials.ledgerUser;
 
