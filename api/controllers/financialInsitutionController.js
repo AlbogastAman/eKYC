@@ -7,30 +7,31 @@ const networkConnection = require('../utils/networkConnection');
 const { createVC, getIssuerKeys } = require('../utils/vcService');
 
 
-exports.createClient = (req, res) => {
 
-    const orgNum = req.orgNum;
-    const ledgerUser = req.ledgerUser;
+// exports.createClient = (req, res) => {
 
-    const { login, password, name, dateOfBirth, address, idNumber } = req.body;
-    const clientData = JSON.stringify({ name, dateOfBirth, address, idNumber, whoRegistered: { orgNum, ledgerUser } });
+//     const orgNum = req.orgNum;
+//     const ledgerUser = req.ledgerUser;
 
-    networkConnection
-        .submitTransaction('createClient', orgNum, ledgerUser, [clientData])
-        .then(async result => {
-            if (result) {
-                result = result.toString();
-                if (result.length > 0) {
-                    await io.clientCreate(login, password, result, JSON.stringify({ orgNum, ledgerUser }));
-                    return res.json({ message: `New client ${result} created`, ledgerId: result });
-                }
-            }
-            return res.status(500).json({ error: 'Something went wrong' });
-        })
-        .catch((err) => {
-            return res.status(500).json({ error: `Something went wrong\n ${err}` });
-        });
-};
+//     const { login, password, name, dateOfBirth, address, idNumber } = req.body;
+//     const clientData = JSON.stringify({ name, dateOfBirth, address, idNumber, whoRegistered: { orgNum, ledgerUser } });
+
+//     networkConnection
+//         .submitTransaction('createClient', orgNum, ledgerUser, [clientData])
+//         .then(async result => {
+//             if (result) {
+//                 result = result.toString();
+//                 if (result.length > 0) {
+//                     await io.clientCreate(login, password, result, JSON.stringify({ orgNum, ledgerUser }));
+//                     return res.json({ message: `New client ${result} created`, ledgerId: result });
+//                 }
+//             }
+//             return res.status(500).json({ error: 'Something went wrong' });
+//         })
+//         .catch((err) => {
+//             return res.status(500).json({ error: `Something went wrong\n ${err}` });
+//         });
+// };
 
 exports.createClient = async (req, res) => {
     const { login, password, name, dateOfBirth, address, country, idNumber } = req.body;

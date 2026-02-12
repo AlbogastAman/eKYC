@@ -1,22 +1,23 @@
 const { createJWT, ES256KSigner } = require('did-jwt');
-const crypto = require('crypto');
+// const crypto = require('node:crypto');
 const { Wallets } = require('fabric-network');
 const { buildPoseidon } = require('circomlibjs');
+const path = require('path');
 
 /**
  * Mock function to retrieve Org-specific Private Keys.
  * In production, these should be in a Secure Vault or HSM.
  */
-const getIssuerKeysMock = async (orgNum) => {
-    // These would typically be loaded from your Fabric Wallet or Environment
-    // For this example, we use a deterministic "secret" based on the org number
-    const privateKey = crypto.createHash('sha256').update(`org${orgNum}_secret_key`).digest('hex');
+// const getIssuerKeysMock = async (orgNum) => {
+//     // These would typically be loaded from your Fabric Wallet or Environment
+//     // For this example, we use a deterministic "secret" based on the org number
+//     const privateKey = crypto.createHash('sha256').update(`org${orgNum}_secret_key`).digest('hex');
 
-    return {
-        issuerDid: `did:fabric:org${orgNum}`,
-        privateKey: privateKey
-    };
-};
+//     return {
+//         issuerDid: `did:fabric:org${orgNum}`,
+//         privateKey: privateKey
+//     };
+// };
 
 /**
  * Retrieves the actual Fabric Private Key from the wallet.
