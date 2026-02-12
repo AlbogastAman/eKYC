@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const io = require('../db/io');
 const networkConnection = require('../utils/networkConnection');
+const { createVC, getIssuerKeys } = require('../utils/vcService');
+
 
 exports.createClient = (req, res) => {
 
@@ -28,6 +30,83 @@ exports.createClient = (req, res) => {
         .catch((err) => {
             return res.status(500).json({ error: `Something went wrong\n ${err}` });
         });
+};
+
+exports.createClient = async (req, res) => {
+    const { login, password, name, dateOfBirth, address, country, idNumber } = req.body;
+    const { orgNum, ledgerUser } = req;
+    try {
+        const userDID = `did:fabric:ekyc:${login}`;
+
+        // 1. Enhanced Key Retrieval (Using real Fabric identity)
+        const issuerKeys = await getIssuerKeys(orgNum, ledgerUser);
+
+        // 2. Generate Salts for each attribute (Vital for ZKP)
+        // These salts MUST be saved in your local DB so the user can generate proofs later!
+        const salts = {
+            idNumber: crypto.randomBytes(16).toString('hex'),
+            dateOfBirth: crypto.randomBytes(16).toString('hex'),
+            country: crypto.randomBytes(16).toString('hex')
+        };
+
+        // 3. Build the VC with "Blindable" Claims
+        const vc = await createVC({
+            id: userDID,
+            claims: {
+                name,
+                address,
+                // We keep these for the VC, but the ZKP will use the salted versions
+                dateOfBirth,
+                idNumber,
+                country,
+            },
+            issuer: issuerKeys.issuerDid,
+            keys: issuerKeys,
+            salts, // Include salts in the VC metadata
+        });
+
+        // 4. Create the Commitment
+        // Instead of hashing the whole VC, we hash the signature or a Merkle Root
+        const credentialCommitment = crypto.createHash('sha256')
+            .update(vc.jwt)
+            .digest('hex');
+
+        // 5. Submit to Ledger
+        const ledgerResponse = await networkConnection.submitTransaction(
+            'anchorCredential',
+            userDID, // Function args should match your new Chaincode exactly
+            credentialCommitment
+        );
+
+        // 6. Save locally (Including the salts!)
+        // If you lose the salts, you can never generate a ZKP again.
+        const dbMetadata = {
+            orgNum,
+            ledgerUser,
+            accountStatus: 'ACTIVE'
+        };
+        await io.clientCreate(
+            login,
+            password,
+            userDID,
+            JSON.stringify(dbMetadata)
+        );
+
+        // 7. Return the "Keys to the Kingdom" to the User
+        // The user is now the sole owner of their salts and signed credential.
+        return res.json({
+            message: `Verifiable Credential issued. Please save your salts securely.`,
+            txId: ledgerResponse.toString(),
+            did: userDID,
+            vc: vcResult.jwt, // The signed JWT
+            salts: salts,      // THE USER MUST STORE THESE LOCALLY
+            rawClaims: { name, dateOfBirth, address, country, idNumber }
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: `Issuance failed: ${err.message}` });
+    }
 };
 
 exports.login = async (req, res) => {

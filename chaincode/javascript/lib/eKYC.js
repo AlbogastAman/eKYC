@@ -120,6 +120,43 @@ class eKYC extends Contract {
     }
 
     /**
+     * @param {Context} ctx
+     * @param {string} userDid - The Decentralized Identifier (e.g., did:fabric:AMALB)
+     * @param {string} credentialHash - The SHA256 hash of the VC
+     */
+    async anchorCredential(ctx, userDid, credentialHash) {
+        console.info('============= START : Anchor Credential ===========');
+
+        const callerId = this.getCallerId(ctx);
+
+        // Security check: Ensure the caller is authorized
+        // (You can add logic here to check if callerId belongs to a verified FI)
+
+        const anchor = {
+            docType: 'credentialAnchor',
+            did: userDid,
+            hash: credentialHash, // Only the proof, no PII
+            issuer: callerId,
+            status: 'VALID',
+            createdAt: new Date().toISOString()
+        };
+
+        // Store the anchor using the DID as the key
+        await ctx.stub.putState(userDid, Buffer.from(JSON.stringify(anchor)));
+
+        // Maintain your composite keys so FIs can still see which clients they registered
+        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [userDid, callerId]);
+        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, userDid]);
+
+        await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
+        await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
+
+        console.info('============= END : Anchor Credential ===========');
+
+        return userDid;
+    }
+
+    /**
      *
      * @param {Context} ctx
      * @param {string} clientId
