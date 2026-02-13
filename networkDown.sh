@@ -10,6 +10,7 @@ set -ex
 # Bring the test network down
 pushd ../test-network
 ./network.sh down
+#docker system prune -a --volumes
 popd
 
 # clean out any old identites in the wallets
