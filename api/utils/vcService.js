@@ -4,6 +4,7 @@ const { Wallets } = require('fabric-network');
 const { buildPoseidon } = require('circomlibjs');
 const path = require('path');
 const crypto = require('crypto');
+const { derToJose } = require('ecdsa-sig-formatter');
 
 /**
  * Mock function to retrieve Org-specific Private Keys.
@@ -140,7 +141,7 @@ const getIssuerKeys = async (orgNumber, ledgerUser) => {
 // };
 
 const createVC = async ({ id, claims, issuer, keys, salts }) => {
-    // 1. Correctly Load the Fabric Private Key
+    // 1. Load the PEM safely
     const privateKeyObject = crypto.createPrivateKey({
         key: keys.privateKey,
         format: 'pem',
@@ -148,44 +149,35 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
     });
 
     /**
-     * 2. Enhanced Signer
-     * did-jwt expects the signature in 'jose' format (R + S concatenated).
-     * Node's default 'sign' returns 'der' format. Using 'jose' prevents verification errors.
+     * 2. Fixed Signer
+     * Node's crypto signs in DER format by default. 
+     * We use derToJose to convert it to the format did-jwt needs for ES256.
      */
     const signer = (data) => {
         const sign = crypto.createSign('SHA256');
         sign.update(data);
         sign.end();
-        // Crucial: Use 'jose' for P-256 keys to match JWT standards
-        return sign.sign(privateKeyObject, 'jose');
+        
+        // Step A: Get the standard DER signature
+        const derSignature = sign.sign(privateKeyObject);
+        
+        // Step B: Convert DER to JOSE (concatenated R and S values)
+        return derToJose(derSignature, 'ES256');
     };
 
-    // 3. Initialize Poseidon for ZKP Commitments
+    // 3. Poseidon Setup (unchanged)
     const poseidon = await buildPoseidon();
+    const toBigInt = (str) => str ? BigInt('0x' + Buffer.from(str).toString('hex')) : BigInt(0);
 
-    // Helper to convert strings to BigInts (Safe for ZK Field)
-    const toBigInt = (str) => {
-        if (!str) return BigInt(0);
-        return BigInt('0x' + Buffer.from(str).toString('hex'));
-    };
+    const dobHash = poseidon.F.toString(poseidon([toBigInt(claims.dateOfBirth), BigInt("0x" + salts.dateOfBirth)]));
+    const idHash = poseidon.F.toString(poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)]));
+    const countryHash = poseidon.F.toString(poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)]));
 
-    // 4. Create ZK-Commitments (Public Inputs for Circom)
-    const dobHash = poseidon.F.toString(
-        poseidon([toBigInt(claims.dateOfBirth), BigInt("0x" + salts.dateOfBirth)])
-    );
-    const idHash = poseidon.F.toString(
-        poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)])
-    );
-    const countryHash = poseidon.F.toString(
-        poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)])
-    );
-
-    // 5. Build the Verifiable Credential Payload
+    // 4. Build Payload
     const payload = {
         sub: id,
         iss: issuer,
         iat: Math.floor(Date.now() / 1000),
-        nbf: Math.floor(Date.now() / 1000), // Not Before
         vc: {
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential", "IdentityCredential"],
@@ -202,19 +194,15 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
         }
     };
 
-    /**
-     * 6. Sign the JWT
-     * IMPORTANT: Changed alg from 'ES256K' to 'ES256' to match your Fabric key type.
-     */
+    // 5. Create JWT (alg must be ES256 to match the Fabric key)
     const token = await createJWT(
-        payload,
-        { issuer, signer },
-        { alg: 'ES256' }
+        payload, 
+        { issuer, signer }, 
+        { alg: 'ES256' } 
     );
 
     return { jwt: token, salts };
 };
-
 module.exports = {
     createVC,
     getIssuerKeys

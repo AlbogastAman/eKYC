@@ -18,11 +18,12 @@
     "license": "Apache-2.0",
     "dependencies": {
         "bcryptjs": "^2.4.3",
+        "circomlibjs": "^0.1.7",
         "cookie-parser": "^1.4.5",
         "cors": "^2.8.5",
-        "circomlibjs": "^0.1.7",
         "did-jwt": "^8.0.18",
         "dotenv": "^8.2.0",
+        "ecdsa-sig-formatter": "^1.0.11",
         "express": "^4.17.1",
         "express-validator": "^6.6.0",
         "fabric-ca-client": "^2.1.1",
