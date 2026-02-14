@@ -3,6 +3,7 @@ const { createJWT, ES256KSigner } = require('did-jwt');
 const { Wallets } = require('fabric-network');
 const { buildPoseidon } = require('circomlibjs');
 const path = require('path');
+const crypto = require('crypto');
 
 /**
  * Mock function to retrieve Org-specific Private Keys.
@@ -57,53 +58,159 @@ const getIssuerKeys = async (orgNumber, ledgerUser) => {
 };
 
 
-const createVC = async ({ id, claims, issuer, keys, salts }) => {
-    //const signer = ES256KSigner(keys.privateKey);
-    console.log("##### privateKey ", keys.privateKey)
-    // const signer = ES256KSigner(
-    //     Buffer.from(privateKey, 'hex')
-    // );
+// const createVC = async ({ id, claims, issuer, keys, salts }) => {
+//     //const signer = ES256KSigner(keys.privateKey);
+//     console.log("##### privateKey ", keys.privateKey)
+//     // const signer = ES256KSigner(
+//     //     Buffer.from(privateKey, 'hex')
+//     // );
 
-    const signer = ES256KSigner(keys.privateKey.replace(/-----(.*)-----|\n/g, ''));
+//     //const signer = ES256KSigner(keys.privateKey.replace(/-----(.*)-----|\n/g, ''));
+
+
+// // 1. Load the PEM into a KeyObject
+//     const privateKeyObject = crypto.createPrivateKey({
+//         key: keys.privateKey,
+//         format: 'pem',
+//         type: 'pkcs8'
+//     });
+
+//     // 2. Export the RAW private key bytes (32 bytes)
+//     // This removes the PEM headers and the P-256 metadata
+//     const rawPrivateKey = privateKeyObject.export({
+//         format: 'der',
+//         type: 'pkcs8'
+//     }).slice(-32); // Take the last 32 bytes which contain the actual secret
+
+//     // 3. Define a custom Signer for ES256 (P-256)
+//     const signer = (data) => {
+//         const sign = crypto.createSign('SHA256');
+//         sign.update(data);
+//         sign.end();
+//         // Returns the DER-encoded signature
+//         return sign.sign(privateKeyObject);
+//     };
+
+
+
+
+
+
+//     const poseidon = await buildPoseidon();
+
+//     // Helper to convert data to ZK-friendly BigInts
+//     const toBigInt = (str) => BigInt('0x' + Buffer.from(str).toString('hex'));
+
+//     // Create ZK-Commitments for sensitive fields
+//     // These match the logic inside your .circom circuit
+//     const dobHash = poseidon.F.toString(
+//         poseidon([toBigInt(claims.dateOfBirth), BigInt("0x" + salts.dateOfBirth)])
+//     );
+//     const idHash = poseidon.F.toString(
+//         poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)])
+//     );
+
+//     const countryHash = poseidon.F.toString(
+//         poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)])
+//     );
+
+//     const payload = {
+//         sub: id,
+//         iss: issuer,
+//         iat: Math.floor(Date.now() / 1000),
+//         vc: {
+//             "@context": ["https://www.w3.org/2018/credentials/v1"],
+//             "type": ["VerifiableCredential", "IdentityCredential"],
+//             "credentialSubject": {
+//                 "id": id,
+//                 "name": claims.name,       // Disclosed (Raw)
+//                 "address": claims.address, // Disclosed (Raw)
+//                 "zkProofs": {
+//                     "dateOfBirthHash": dobHash, // Hidden (Commitment)
+//                     "idNumberHash": idHash,     // Hidden (Commitment)
+//                     "countryHash": countryHash // The commitment Bank B
+//                 }
+//             }
+//         }
+//     };
+
+//     const token = await createJWT(payload, { issuer, signer }, { alg: 'ES256K' });
+
+//     return { jwt: token, salts };
+// };
+
+const createVC = async ({ id, claims, issuer, keys, salts }) => {
+    // 1. Correctly Load the Fabric Private Key
+    const privateKeyObject = crypto.createPrivateKey({
+        key: keys.privateKey,
+        format: 'pem',
+        type: 'pkcs8'
+    });
+
+    /**
+     * 2. Enhanced Signer
+     * did-jwt expects the signature in 'jose' format (R + S concatenated).
+     * Node's default 'sign' returns 'der' format. Using 'jose' prevents verification errors.
+     */
+    const signer = (data) => {
+        const sign = crypto.createSign('SHA256');
+        sign.update(data);
+        sign.end();
+        // Crucial: Use 'jose' for P-256 keys to match JWT standards
+        return sign.sign(privateKeyObject, 'jose');
+    };
+
+    // 3. Initialize Poseidon for ZKP Commitments
     const poseidon = await buildPoseidon();
 
-    // Helper to convert data to ZK-friendly BigInts
-    const toBigInt = (str) => BigInt('0x' + Buffer.from(str).toString('hex'));
+    // Helper to convert strings to BigInts (Safe for ZK Field)
+    const toBigInt = (str) => {
+        if (!str) return BigInt(0);
+        return BigInt('0x' + Buffer.from(str).toString('hex'));
+    };
 
-    // Create ZK-Commitments for sensitive fields
-    // These match the logic inside your .circom circuit
+    // 4. Create ZK-Commitments (Public Inputs for Circom)
     const dobHash = poseidon.F.toString(
         poseidon([toBigInt(claims.dateOfBirth), BigInt("0x" + salts.dateOfBirth)])
     );
     const idHash = poseidon.F.toString(
         poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)])
     );
-
     const countryHash = poseidon.F.toString(
         poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)])
     );
 
+    // 5. Build the Verifiable Credential Payload
     const payload = {
         sub: id,
         iss: issuer,
         iat: Math.floor(Date.now() / 1000),
+        nbf: Math.floor(Date.now() / 1000), // Not Before
         vc: {
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential", "IdentityCredential"],
             "credentialSubject": {
                 "id": id,
-                "name": claims.name,       // Disclosed (Raw)
-                "address": claims.address, // Disclosed (Raw)
+                "name": claims.name,
+                "address": claims.address,
                 "zkProofs": {
-                    "dateOfBirthHash": dobHash, // Hidden (Commitment)
-                    "idNumberHash": idHash,     // Hidden (Commitment)
-                    "countryHash": countryHash // The commitment Bank B
+                    "dateOfBirthHash": dobHash,
+                    "idNumberHash": idHash,
+                    "countryHash": countryHash
                 }
             }
         }
     };
 
-    const token = await createJWT(payload, { issuer, signer }, { alg: 'ES256K' });
+    /**
+     * 6. Sign the JWT
+     * IMPORTANT: Changed alg from 'ES256K' to 'ES256' to match your Fabric key type.
+     */
+    const token = await createJWT(
+        payload,
+        { issuer, signer },
+        { alg: 'ES256' }
+    );
 
     return { jwt: token, salts };
 };
