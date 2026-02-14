@@ -64,22 +64,17 @@ exports.createClient = async (req, res) => {
             keys: issuerKeys,
             salts, // Include salts in the VC metadata
         });
-
-        console.log("####vc created ", vcResult);
         // 4. Create the Commitment
         // Instead of hashing the whole VC, we hash the signature or a Merkle Root
         const credentialCommitment = crypto.createHash('sha256')
             .update(vcResult.jwt)
             .digest('hex');
 
-            console.log("####vc credentialCommitment ", credentialCommitment);
-
         // 5. Submit to Ledger
         const ledgerResponse = await networkConnection.submitTransaction(
             'anchorCredential',
-            orgNum,
-            ledgerUser,
-            [userDID, credentialCommitment]
+            userDID,
+            credentialCommitment
         );
 
         // 6. Save locally (Including the salts!)
