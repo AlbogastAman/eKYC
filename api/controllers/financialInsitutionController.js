@@ -50,7 +50,7 @@ exports.createClient = async (req, res) => {
         };
 
         // 3. Build the VC with "Blindable" Claims
-        const vc = await createVC({
+        const vcResult = await createVC({
             id: userDID,
             claims: {
                 name,
@@ -65,17 +65,21 @@ exports.createClient = async (req, res) => {
             salts, // Include salts in the VC metadata
         });
 
+        console.log("####vc created ", vcResult);
         // 4. Create the Commitment
         // Instead of hashing the whole VC, we hash the signature or a Merkle Root
         const credentialCommitment = crypto.createHash('sha256')
-            .update(vc.jwt)
+            .update(vcResult.jwt)
             .digest('hex');
+
+            console.log("####vc credentialCommitment ", credentialCommitment);
 
         // 5. Submit to Ledger
         const ledgerResponse = await networkConnection.submitTransaction(
             'anchorCredential',
-            userDID, // Function args should match your new Chaincode exactly
-            credentialCommitment
+            orgNum,
+            ledgerUser,
+            [userDID, credentialCommitment]
         );
 
         // 6. Save locally (Including the salts!)
