@@ -132,13 +132,17 @@ class eKYC extends Contract {
         // Security check: Ensure the caller is authorized
         // (You can add logic here to check if callerId belongs to a verified FI)
 
+        // Get the deterministic timestamp from the transaction context
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        const createdAt = new Date(txTimestamp.seconds * 1000).toISOString();
+
         const anchor = {
             docType: 'credentialAnchor',
             did: userDid,
             hash: credentialHash, // Only the proof, no PII
             issuer: callerId,
             status: 'VALID',
-            createdAt: new Date().toISOString()
+            createdAt: createdAt
         };
 
         // Store the anchor using the DID as the key
