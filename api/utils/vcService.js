@@ -33,7 +33,6 @@ const getIssuerKeys = async (orgNumber, ledgerUser) => {
         // Create a new file system based wallet for managing identities.
         const walletPath = path.join(__dirname, '../wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
-        console.log(`Wallet path: ${walletPath}`);
 
         // Check to see if we've already enrolled the user.
         const identity = await wallet.get(ledgerUser);

@@ -5,8 +5,7 @@ const User = require('../models/user');
 const io = require('../db/io');
 const networkConnection = require('../utils/networkConnection');
 const { createVC, getIssuerKeys } = require('../utils/vcService');
-
-
+const crypto = require('crypto');
 
 // exports.createClient = (req, res) => {
 
