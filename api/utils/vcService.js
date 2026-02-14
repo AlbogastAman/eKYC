@@ -58,7 +58,10 @@ const getIssuerKeys = async (orgNumber, ledgerUser) => {
 
 
 const createVC = async ({ id, claims, issuer, keys, salts }) => {
-    const signer = ES256KSigner(keys.privateKey);
+    //const signer = ES256KSigner(keys.privateKey);
+    const signer = ES256KSigner(
+        Buffer.from(keys.privateKey, 'hex')
+    );
     const poseidon = await buildPoseidon();
 
     // Helper to convert data to ZK-friendly BigInts
