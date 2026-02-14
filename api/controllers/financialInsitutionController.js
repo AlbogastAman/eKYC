@@ -40,6 +40,8 @@ exports.createClient = async (req, res) => {
 
         // 1. Enhanced Key Retrieval (Using real Fabric identity)
         const issuerKeys = await getIssuerKeys(orgNum, ledgerUser);
+        console.log("#####issuerKeys", issuerKeys);
+        const signingKey = crypto.createPrivateKey(issuerKeys.privateKey);
 
         // 2. Generate Salts for each attribute (Vital for ZKP)
         // These salts MUST be saved in your local DB so the user can generate proofs later!
@@ -61,7 +63,7 @@ exports.createClient = async (req, res) => {
                 country,
             },
             issuer: issuerKeys.issuerDid,
-            keys: issuerKeys,
+            keys: signingKey,
             salts, // Include salts in the VC metadata
         });
 

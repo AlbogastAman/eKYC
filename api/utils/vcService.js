@@ -57,10 +57,11 @@ const getIssuerKeys = async (orgNumber, ledgerUser) => {
 };
 
 
-const createVC = async ({ id, claims, issuer, keys, salts }) => {
+const createVC = async ({ id, claims, issuer, privateKey, salts }) => {
     //const signer = ES256KSigner(keys.privateKey);
+    console.log("##### privateKey ", privateKey)
     const signer = ES256KSigner(
-        Buffer.from(keys.privateKey, 'hex')
+        Buffer.from(privateKey, 'hex')
     );
     const poseidon = await buildPoseidon();
 
