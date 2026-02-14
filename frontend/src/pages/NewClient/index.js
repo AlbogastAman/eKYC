@@ -33,6 +33,11 @@ const Login = () => {
         setClientData({ ...clientData, idNumber: e.target.value });
     };
 
+    function handleCounrty(e) {
+        setClientData({ ...clientData, country: e.target.value });
+    };
+
+
     function handleLogin(e) {
         setClientData({ ...clientData, login: e.target.value });
     };
@@ -52,6 +57,7 @@ const Login = () => {
                 clientData.address && clientData.address.length > 0 &&
                 clientData.dateOfBirth && clientData.dateOfBirth.length > 0 &&
                 clientData.idNumber && clientData.idNumber.length > 0 &&
+                clientData.country && clientData.country.length > 0 &&
                 clientData.login && clientData.login.length > 0 &&
                 clientData.password && clientData.password.length > 5 &&
                 clientData.password === confirmPassword &&
@@ -167,6 +173,17 @@ const Login = () => {
                                         required
                                         onChange={handleIdNumber}
                                         value={clientData.idNumber}
+                                        width={1}
+                                    />
+                                </Field>
+                            </Box>
+                            <Box width={1} px={3}>
+                                <Field label="Country" width={1}>
+                                    <Form.Input
+                                        type="text"
+                                        required
+                                        onChange={handleCounrty}
+                                        value={clientData.country}
                                         width={1}
                                     />
                                 </Field>
