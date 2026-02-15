@@ -9,7 +9,7 @@ CHANNEL_NAME="mychannel"
 
 # Path setup for the test-network directory
 #export PATH=${PWD}/../../bin:$PATH
-export FABRIC_CFG_PATH=$PWD/../../config/
+export FABRIC_CFG_PATH=$PWD/../../../config/
 
 # 2. Import Official Utils
 # This provides the setGlobals function you mentioned
