@@ -25,6 +25,7 @@ function printHelp() {
   echo "      - 'up createChannel' - bring up fabric network with one channel"
   echo "      - 'createChannel' - create and join a channel after the network is created"
   echo "      - 'deployCC' - deploy the eKYC chaincode on the channel"
+  echo "      - 'upgradeCC' - upgrade the eKYC chaincode on the channel"
   echo "      - 'down' - clear the network with docker-compose down"
   echo "      - 'restart' - restart the network"
   echo
@@ -392,6 +393,21 @@ function deployCC() {
 }
 
 
+## Call the script to upgrade and instantiate a chaincode on the channel
+
+function upgradeCC() {
+
+  scripts/upgradeCC.sh
+
+  if [ $? -ne 0 ]; then
+    echo "ERROR !!! Upgrading chaincode failed"
+    exit 1
+  fi
+
+  exit 0
+}
+
+
 # Tear down running network
 function networkDown() {
   # stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
@@ -568,6 +584,8 @@ elif [ "${MODE}" == "createChannel" ]; then
   createChannel
 elif [ "${MODE}" == "deployCC" ]; then
   deployCC
+elif [ "${MODE}" == "upgradeCC" ]; then
+  upgradeCC
 elif [ "${MODE}" == "down" ]; then
   networkDown
 elif [ "${MODE}" == "restart" ]; then
