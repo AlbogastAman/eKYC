@@ -73,8 +73,9 @@ exports.createClient = async (req, res) => {
         // 5. Submit to Ledger
         const ledgerResponse = await networkConnection.submitTransaction(
             'anchorCredential',
-            userDID,
-            credentialCommitment
+            orgNum,
+            ledgerUser,
+            userDID, credentialCommitment
         );
 
         // 6. Save locally (Including the salts!)

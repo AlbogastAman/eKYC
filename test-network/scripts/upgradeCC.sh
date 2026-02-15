@@ -31,7 +31,7 @@ function setGlobals() {
 echo "----------------------------------------------------------"
 echo "Starting Chaincode Upgrade: ${CC_NAME} (v${CC_VERSION})"
 echo "----------------------------------------------------------"
-
+setGlobals 1
 peer lifecycle chaincode querycommitted --channelID ${CHANNEL_NAME} --name ${CC_NAME} --tls --cafile ${ORDERER_CA}
 
 echo "Step 1: Packaging Chaincode..."
