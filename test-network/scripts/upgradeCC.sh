@@ -2,18 +2,30 @@
 
 # 1. Configuration
 CC_NAME="eKYC"
-CC_SRC_PATH="../chaincode/javascript/" 
+CC_SRC_PATH="../../chaincode/javascript/" 
 CC_VERSION="2.0"                       
 CC_SEQUENCE="2"                        
 CHANNEL_NAME="mychannel"
 
 # Path setup for the test-network directory
-#export PATH=${PWD}/../../bin:$PATH
+export PATH=${PWD}/../../../bin:$PATH
 export FABRIC_CFG_PATH=$PWD/../../../config/
+export ORDERER_CA=${PWD}/../organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
 
-# 2. Import Official Utils
-# This provides the setGlobals function you mentioned
-. envVar.sh
+function setGlobals() {
+  local ORG=$1
+  if [ $ORG -eq 1 ]; then
+    export CORE_PEER_LOCALMSPID="Org1MSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/../organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:7051
+  elif [ $ORG -eq 2 ]; then
+    export CORE_PEER_LOCALMSPID="Org2MSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}../organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:9051
+  fi
+}
 
 echo "----------------------------------------------------------"
 echo "Starting Chaincode Upgrade: ${CC_NAME} (v${CC_VERSION})"
