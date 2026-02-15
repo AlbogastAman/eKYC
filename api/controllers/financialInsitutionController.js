@@ -75,7 +75,7 @@ exports.createClient = async (req, res) => {
             'anchorCredential',
             orgNum,
             ledgerUser,
-            userDID, credentialCommitment
+            [userDID, credentialCommitment]
         );
 
         // 6. Save locally (Including the salts!)
