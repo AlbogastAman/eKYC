@@ -8,6 +8,7 @@ CC_SEQUENCE="2"
 CHANNEL_NAME="mychannel"
 
 # Path setup for the test-network directory
+export CORE_PEER_TLS_ENABLED=true
 export PATH=${PWD}/../../../bin:$PATH
 export FABRIC_CFG_PATH=$PWD/../../../config/
 export ORDERER_CA=${PWD}/../organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
@@ -30,6 +31,8 @@ function setGlobals() {
 echo "----------------------------------------------------------"
 echo "Starting Chaincode Upgrade: ${CC_NAME} (v${CC_VERSION})"
 echo "----------------------------------------------------------"
+
+peer lifecycle chaincode querycommitted --channelID ${CHANNEL_NAME} --name ${CC_NAME} --tls --cafile ${ORDERER_CA}
 
 echo "Step 1: Packaging Chaincode..."
 peer lifecycle chaincode package ${CC_NAME}.tar.gz --path ${CC_SRC_PATH} --lang node --label ${CC_NAME}_${CC_VERSION}
