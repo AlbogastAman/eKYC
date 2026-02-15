@@ -13,7 +13,7 @@ export FABRIC_CFG_PATH=$PWD/../../config/
 
 # 2. Import Official Utils
 # This provides the setGlobals function you mentioned
-. scripts/envVar.sh
+. envVar.sh
 
 echo "----------------------------------------------------------"
 echo "Starting Chaincode Upgrade: ${CC_NAME} (v${CC_VERSION})"
