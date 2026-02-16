@@ -115,15 +115,16 @@ const createFabricResolver = (orgNumber, userName) => {
     return new Resolver({
         fabric: async (did) => {
             // Use your existing evaluateTransaction utility
-            const bankDataBuffer = await networkConnection.evaluateTransaction(
+            const fiDataBuffer = await networkConnection.evaluateTransaction(
                 'getDidDocument',
                 orgNumber,
                 userName,
                 [did] // The DID we are looking up (e.g., "did:fabric:org1")
             );
 
-            const bankDoc = JSON.parse(bankDataBuffer.toString());
-
+            const fiDoc = JSON.parse(fiDataBuffer.toString());
+            console.log("###did##: ", did);
+            console.log("###fiDoc##: ", fiDoc);
             return {
                 didDocument: {
                     id: did,
@@ -131,7 +132,7 @@ const createFabricResolver = (orgNumber, userName) => {
                         id: `${did}#key-1`,
                         type: 'JsonWebKey2020',
                         controller: did,
-                        publicKeyJwk: bankDoc.publicKeyJwk
+                        publicKeyJwk: fiDoc.publicKeyJwk
                     }],
                     assertionMethod: [`${did}#key-1`]
                 }
