@@ -129,7 +129,7 @@ exports.verifyUserVC = async (req, res) => {
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
         const verifiedVC = await verifyJWT(vc, { resolver });
-        console.log("verifiedVC#####", verifiedVC);
+
         // 2. Ledger Anchoring Check
         // We hash the incoming VC string to compare it with the proof on the ledger
         const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
@@ -137,13 +137,12 @@ exports.verifyUserVC = async (req, res) => {
         // Query your existing anchor login
         const anchor = await networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid]);
 
-        console.log("anchor#####", anchor);
-        console.log(" parsed anchor#####", JSON.parse(anchor.toString()));
-        if (anchor.hash !== vcHash) {
+        let anchorParsed = JSON.parse(anchor.toString());
+        if (anchorParsed.hash !== vcHash) {
             return res.status(401).json({ error: "VC content does not match ledger anchor (Tampered)" });
         }
 
-        if (anchor.status !== 'VALID') {
+        if (anchorParsed.status !== 'VALID') {
             return res.status(401).json({ error: "Credential has been revoked" });
         }
 
