@@ -47,9 +47,6 @@ async function main() {
         }
 
         // 1. Convert Certificate to JWK
-        //const certPem = fs.readFileSync(certPath, 'utf8');
-        //const jwk = pem2jwk(certPem);
-
         const certPem = fs.readFileSync(certPath, 'utf8');
         const publicKey = crypto.createPublicKey(certPem);
         const jwk = publicKey.export({ format: 'jwk' });

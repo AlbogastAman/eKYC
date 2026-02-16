@@ -6,7 +6,7 @@ const io = require('../db/io');
 const networkConnection = require('../utils/networkConnection');
 const { createVC, getIssuerKeys, createFabricResolver } = require('../utils/vcService');
 const crypto = require('node:crypto');
-const { verifyJWT } = require('did-jwt');
+const { verifyJWT, decodeJWT } = require('did-jwt');
 
 // exports.createClient = (req, res) => {
 
@@ -117,6 +117,15 @@ exports.verifyUserVC = async (req, res) => {
     const resolver = createFabricResolver(orgNumber, ledgerUser);
 
     try {
+
+        const decoded = decodeJWT(vc);
+        console.log("Header KID:", decoded.header.kid);
+        console.log("Payload ISS:", decoded.payload.iss);
+
+        // Check if the signature length is exactly 64 bytes (86 characters in Base64URL)
+        const signature = vc.split('.')[2];
+        console.log("Signature Length (Base64URL):", signature.length);
+
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
         const verifiedVC = await verifyJWT(vc, { resolver });

@@ -55,15 +55,27 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
      * We use derToJose to convert it to the format did-jwt needs for ES256.
      */
     const signer = (data) => {
-        const sign = crypto.createSign('SHA256');
-        sign.update(data);
-        sign.end();
+        // const sign = crypto.createSign('SHA256');
+        // sign.update(data);
+        // sign.end();
 
-        // Step A: Get the standard DER signature
-        const derSignature = sign.sign(privateKeyObject);
+        // // Step A: Get the standard DER signature
+        // const derSignature = sign.sign(privateKeyObject);
 
-        // Step B: Convert DER to JOSE (concatenated R and S values)
+        // // Step B: Convert DER to JOSE (concatenated R and S values)
+        // return derToJose(derSignature, 'ES256');
+
+
+        // Ensure data is a Buffer
+        const dataBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+
+        // Sign using the private key
+        const derSignature = crypto.sign("SHA256", dataBuffer, privateKeyObject);
+
+        // IMPORTANT: ES256 signatures must be exactly 64 bytes (R + S)
+        // If your derToJose is custom, ensure it handles the R and S padding correctly
         return derToJose(derSignature, 'ES256');
+
     };
 
     // 3. Poseidon Setup (unchanged)
@@ -98,7 +110,7 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
     // 5. Create JWT (alg must be ES256 to match the Fabric key)
     const token = await createJWT(
         payload,
-        { issuer, signer },
+        { issuer: issuer, signer },
         {
             alg: 'ES256',
             typ: 'JWT',
@@ -124,7 +136,6 @@ const createFabricResolver = (orgNumber, userName) => {
             .replace(/\//g, '_')
             .replace(/=/g, '');
     };
-
 
     return new Resolver({
         fabric: async (did) => {
