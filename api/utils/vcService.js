@@ -5,6 +5,7 @@ const { buildPoseidon } = require('circomlibjs');
 const path = require('path');
 const { derToJose } = require('ecdsa-sig-formatter');
 const networkConnection = require('./networkConnection');
+const { Resolver } = require('did-resolver');
 
 /**
  * Retrieves the actual Fabric Private Key from the wallet.
