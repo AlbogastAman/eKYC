@@ -24,11 +24,12 @@ async function main() {
 
     // Check to see if we've already enrolled the adminName user.
     const identity = await wallet.get(adminName);
-    if (identity) {
-        console.log(`An identity for the admin user "${adminName}" already exists in the wallet`);
+    if (!identity) {
+        console.log(`An identity for the admin user "${adminName}" not found in the wallet`);
         return;
     }
 
+    console.log(`An identity for the admin user "${adminName}" already exists in the wallet`);
     const fiDid = `did:fabric:${orgName}`;
 
     // Path to the Admin certificate for the specified org
