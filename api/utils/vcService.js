@@ -116,6 +116,16 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
  * @param {string} userName - The identity in the wallet (e.g., 'admin')
  */
 const createFabricResolver = (orgNumber, userName) => {
+
+    // Helper to ensure coordinates are Base64URL compliant (no +, /, or =)
+    const fixBase64Url = (str) => {
+        return str
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+    };
+
+
     return new Resolver({
         fabric: async (did) => {
             // Use your existing evaluateTransaction utility
@@ -127,8 +137,20 @@ const createFabricResolver = (orgNumber, userName) => {
             );
 
             const fiDoc = JSON.parse(fiDataBuffer.toString());
-            console.log("###did##: ", did);
-            console.log("###fiDoc##: ", fiDoc);
+
+
+            // Ensure x and y are clean Base64URL strings
+            const cleanX = fixBase64Url(fiDoc.publicKeyJwk.x);
+            const cleanY = fixBase64Url(fiDoc.publicKeyJwk.y);
+
+            // --- ADD LOGS HERE ---
+            console.log("--- DEBUGGING RESOLVER ---");
+            console.log("DID being resolved:", did);
+            console.log("X coordinate:", cleanX);
+            console.log("X length:", cleanX.length);
+            console.log("Y length:", cleanY.length);
+            // ---------------------
+
             return {
                 didDocument: {
                     id: did,
@@ -136,7 +158,12 @@ const createFabricResolver = (orgNumber, userName) => {
                         id: `${did}#key-1`,
                         type: 'JsonWebKey2020',
                         controller: did,
-                        publicKeyJwk: fiDoc.publicKeyJwk
+                        publicKeyJwk: {
+                            kty: 'EC',
+                            crv: 'P-256',
+                            x: cleanX,
+                            y: cleanY
+                        }
                     }],
                     assertionMethod: [`${did}#key-1`]
                 }
