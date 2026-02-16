@@ -138,7 +138,7 @@ exports.verifyUserVC = async (req, res) => {
         const anchor = await networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid]);
 
         console.log("anchor#####", anchor);
-
+        console.log(" parsed anchor#####", JSON.parse(anchor.toString()));
         if (anchor.hash !== vcHash) {
             return res.status(401).json({ error: "VC content does not match ledger anchor (Tampered)" });
         }
