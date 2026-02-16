@@ -104,28 +104,43 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
     return { jwt: token, salts };
 };
 
-const fabricResolver = {
-    fabric: async (did) => {
-        // Query the ledger for the Bank's Identity
-        const fiDoc = await networkConnection.queryChaincode('getDidDocument', [did]);
 
-        return {
-            didDocument: {
-                id: did,
-                verificationMethod: [{
-                    id: `${did}#key-1`,
-                    type: 'JsonWebKey2020',
-                    controller: did,
-                    publicKeyJwk: fiDoc.publicKeyJwk // Use the JWK we registered
-                }],
-                assertionMethod: [`${did}#key-1`]
-            }
-        };
-    }
+/**
+ * Creates a DID Resolver that uses the Fabric ledger.
+ * @param {string} orgNumber - The org performing the query (e.g., '2')
+ * @param {string} userName - The identity in the wallet (e.g., 'admin')
+ */
+const createFabricResolver = (orgNumber, userName) => {
+    return new Resolver({
+        fabric: async (did) => {
+            // Use your existing evaluateTransaction utility
+            const bankDataBuffer = await networkConnection.evaluateTransaction(
+                'getDidDocument',
+                orgNumber,
+                userName,
+                [did] // The DID we are looking up (e.g., "did:fabric:org1")
+            );
+
+            const bankDoc = JSON.parse(bankDataBuffer.toString());
+
+            return {
+                didDocument: {
+                    id: did,
+                    verificationMethod: [{
+                        id: `${did}#key-1`,
+                        type: 'JsonWebKey2020',
+                        controller: did,
+                        publicKeyJwk: bankDoc.publicKeyJwk
+                    }],
+                    assertionMethod: [`${did}#key-1`]
+                }
+            };
+        }
+    });
 };
 
 module.exports = {
     createVC,
     getIssuerKeys,
-    fabricResolver,
+    createFabricResolver,
 };

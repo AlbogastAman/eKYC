@@ -4,9 +4,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const io = require('../db/io');
 const networkConnection = require('../utils/networkConnection');
-const { createVC, getIssuerKeys, fabricResolver } = require('../utils/vcService');
+const { createVC, getIssuerKeys, createFabricResolver } = require('../utils/vcService');
 const crypto = require('node:crypto');
-const { Resolver } = require('did-resolver');
 const { verifyJWT } = require('did-jwt');
 
 // exports.createClient = (req, res) => {
@@ -113,10 +112,10 @@ exports.createClient = async (req, res) => {
 
 exports.verifyUserVC = async (req, res) => {
     const { vc, userDid } = req.body;
+    let orgNumber = req.orgNum;
+    let ledgerUser = req.ledgerUser;
+    const resolver = createFabricResolver(orgNumber, ledgerUser);
 
-    const resolver = new Resolver(fabricResolver);
-    console.log("vc#####", vc);
-    console.log("userDid#####", userDid);
     try {
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
@@ -126,8 +125,8 @@ exports.verifyUserVC = async (req, res) => {
         // We hash the incoming VC string to compare it with the proof on the ledger
         const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
 
-        // Query your existing anchor logic
-        const anchor = await networkConnection.queryChaincode('readAnchor', [userDid]);
+        // Query your existing anchor login
+        const anchor = await networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid]);
 
         if (anchor.hash !== vcHash) {
             return res.status(401).json({ error: "VC content does not match ledger anchor (Tampered)" });
