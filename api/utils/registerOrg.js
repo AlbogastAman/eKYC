@@ -58,19 +58,21 @@ async function main() {
             y: jwk.y
         });
 
+        console.log(`Transaction ID: ${publicKeyJwk}`);
         // 2. Submit to Ledger
         // Uses your existing utility to call the 'registerBank' function in chaincode
         const response = await networkConnection.submitTransaction(
             'registerFI',
             orgNum,     // 1 for Org1, 2 for Org2
             adminName,    // wallet user
-            [fiDid, publicKeyJwk]
+            [fiDid, JSON.stringify(publicKeyJwk)]
         );
 
         console.log(`Successfully registered ${fiDid} on the ledger.`);
         console.log(`Transaction ID: ${response}`);
 
     } catch (error) {
+        console.log(`Transaction ID: ${error}`);
         console.error(`Registration Failed: ${error.message}`);
         process.exit(1);
     }
