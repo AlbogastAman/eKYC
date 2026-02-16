@@ -392,8 +392,8 @@ class eKYC extends Contract {
             throw new Error(`Forbidden: ${callerMspId} cannot register a DID for ${fiDid}`);
         }
 
-        // 3. STORAGE: Save the Bank Identity (DID Document)
-        const bankIdentity = {
+        // 3. STORAGE: Save the FI Identity (DID Document)
+        const fiIdentity = {
             docType: 'fiIdentity',
             did: fiDid,
             mspId: callerMspId,
@@ -402,14 +402,14 @@ class eKYC extends Contract {
             updatedAt: ctx.stub.getTxTimestamp().seconds.low
         };
 
-        // Use the fiDid as the key so it's easily resolvable by Bank B
-        await ctx.stub.putState(fiDid, Buffer.from(JSON.stringify(bankIdentity)));
+        // Use the fiDid as the key so it's easily resolvable by other FI
+        await ctx.stub.putState(fiDid, Buffer.from(JSON.stringify(fiIdentity)));
         
-        console.info(`Bank Registered: ${fiDid}`);
+        console.info(`FI Registered: ${fiDid}`);
     }
 
     /**
-     * getDidDocument allows Bank B to resolve Bank A's public key
+     * getDidDocument allows FI 2 to resolve F1 1's public key
      */
     async getDidDocument(ctx, did) {
         const dataBytes = await ctx.stub.getState(did);

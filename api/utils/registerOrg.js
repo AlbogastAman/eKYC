@@ -29,7 +29,7 @@ async function main() {
         return;
     }
 
-    const bankDid = `did:fabric:${orgName}`;
+    const fiDid = `did:fabric:${orgName}`;
 
     // Path to the Admin certificate for the specified org
     const certPath = path.resolve(
@@ -63,10 +63,10 @@ async function main() {
             'registerFI',
             orgNum,     // 1 for Org1, 2 for Org2
             adminName,    // wallet user
-            [bankDid, publicKeyJwk]
+            [fiDid, publicKeyJwk]
         );
 
-        console.log(`Successfully registered ${bankDid} on the ledger.`);
+        console.log(`Successfully registered ${fiDid} on the ledger.`);
         console.log(`Transaction ID: ${response}`);
 
     } catch (error) {
