@@ -366,6 +366,58 @@ class eKYC extends Contract {
         console.info(allResults);
         return JSON.stringify(allResults);
     }
+
+  /**
+     * registerFI registers a FI's Public Identity (DID Document) on the ledger.
+     * @param {Context} ctx The transaction context
+     * @param {String} fiDid The DID of the FI (e.g., "did:fabric:org1")
+     * @param {String} publicKeyJwk The Public Key in JWK string format
+     */
+    async registerFI(ctx, fiDid, publicKeyJwk) {
+        const cid = new ClientIdentity(ctx.stub);
+        
+        // 1. CHECK: Is the user an Admin?
+        // We check the 'hf.Registrar.Attributes' or look for 'admin' in the Distinguished Name (DN)
+        const x509Identifier = cid.getID(); 
+        if (!x509Identifier.toLowerCase().includes('admin')) {
+            throw new Error('Unauthorized: Only administrative identities can register a Bank.');
+        }
+
+        // 2. CHECK: Does the DID match the caller's MSP?
+        // If caller is from Org1MSP, they should only register did:fabric:org1
+        const callerMspId = cid.getMSPID(); // e.g., "Org1MSP"
+        const expectedOrgSuffix = callerMspId.toLowerCase().replace('msp', ''); // "org1"
+        
+        if (!fiDid.endsWith(expectedOrgSuffix)) {
+            throw new Error(`Forbidden: ${callerMspId} cannot register a DID for ${fiDid}`);
+        }
+
+        // 3. STORAGE: Save the Bank Identity (DID Document)
+        const bankIdentity = {
+            docType: 'fiIdentity',
+            did: fiDid,
+            mspId: callerMspId,
+            publicKeyJwk: JSON.parse(publicKeyJwk),
+            status: 'ACTIVE',
+            updatedAt: ctx.stub.getTxTimestamp().seconds.low
+        };
+
+        // Use the fiDid as the key so it's easily resolvable by Bank B
+        await ctx.stub.putState(fiDid, Buffer.from(JSON.stringify(bankIdentity)));
+        
+        console.info(`Bank Registered: ${fiDid}`);
+    }
+
+    /**
+     * getDidDocument allows Bank B to resolve Bank A's public key
+     */
+    async getDidDocument(ctx, did) {
+        const dataBytes = await ctx.stub.getState(did);
+        if (!dataBytes || dataBytes.length === 0) {
+            throw new Error(`The DID Document for ${did} was not found.`);
+        }
+        return dataBytes.toString();
+    }
 }
 
 module.exports = eKYC;
