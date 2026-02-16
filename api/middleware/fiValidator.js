@@ -51,3 +51,19 @@ exports.login = [
         .withMessage('Password must be specified.')
         .escape()
 ];
+
+
+exports.vc = [
+    validator
+        .body('vc')
+        .isLength({ min: 1 })
+        .trim()
+        .withMessage('VC must be specified.')
+        .escape(),
+    validator
+        .body('userDid')
+        .isLength({ min: 1 })
+        .trim()
+        .withMessage('User DID must be specified.')
+        .escape()
+];

@@ -13,6 +13,12 @@ router.post('/createClient',
     credentials.getOrgCredentials,
     financialInsitutionController.createClient);
 
+router.post('/verifyUserVC',
+    fiValidator.vc,
+    validate,
+    credentials.getOrgCredentials,
+    financialInsitutionController.verifyUserVC);
+
 router.post('/login',
     fiValidator.login,
     validate,
@@ -32,5 +38,6 @@ router.get('/getApprovedClients',
     checkLogin,
     credentials.getOrgCredentials,
     financialInsitutionController.getApprovedClients);
+
 
 module.exports = router;
