@@ -1,8 +1,9 @@
 const { createJWT } = require('did-jwt');
 const crypto = require('node:crypto');
-const { Wallets } = require('fabric-network');
+//const { Wallets } = require('fabric-network');
 const { buildPoseidon } = require('circomlibjs');
 const path = require('path');
+const fs = require('fs');
 const { derToJose } = require('ecdsa-sig-formatter');
 const networkConnection = require('./networkConnection');
 const { Resolver } = require('did-resolver');
