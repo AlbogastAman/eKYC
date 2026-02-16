@@ -46,10 +46,12 @@ async function main() {
             throw new Error(`Certificate not found at: ${certPath}`);
         }
 
+        console.log("#certPath## :",certPath)
         // 1. Convert Certificate to JWK
-        const certPem = fs.readFileSync(certPath, 'utf8');
+        const certPem = fs.readFileSync(certPath, 'ascii');
         const jwk = pem2jwk(certPem);
 
+        console.log(`jwk###: ${jwk}`);
         // Construct the Public Key JWK (Required for did-jwt)
         const publicKeyJwk = JSON.stringify({
             kty: jwk.kty,
@@ -72,7 +74,7 @@ async function main() {
         console.log(`Transaction ID: ${response}`);
 
     } catch (error) {
-        console.log(`Transaction ID: ${error}`);
+        console.log(`er###: ${error}`);
         console.error(`Registration Failed: ${error.message}`);
         process.exit(1);
     }
