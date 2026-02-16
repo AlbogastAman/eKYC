@@ -54,7 +54,6 @@ async function main() {
         const publicKey = crypto.createPublicKey(certPem);
         const jwk = publicKey.export({ format: 'jwk' });
 
-        console.log(`jwk###: ${jwk}`);
         // Construct the Public Key JWK (Required for did-jwt)
         const publicKeyJwk = JSON.stringify({
             kty: jwk.kty,
@@ -63,7 +62,6 @@ async function main() {
             y: jwk.y
         });
 
-        console.log(`Transaction ID: ${publicKeyJwk}`);
         // 2. Submit to Ledger
         // Uses your existing utility to call the 'registerBank' function in chaincode
         const response = await networkConnection.submitTransaction(
@@ -77,7 +75,6 @@ async function main() {
         console.log(`Transaction ID: ${response}`);
 
     } catch (error) {
-        console.log(`er###: ${error}`);
         console.error(`Registration Failed: ${error.message}`);
         process.exit(1);
     }

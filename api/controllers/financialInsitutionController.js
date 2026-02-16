@@ -4,8 +4,10 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const io = require('../db/io');
 const networkConnection = require('../utils/networkConnection');
-const { createVC, getIssuerKeys } = require('../utils/vcService');
-const crypto = require('crypto');
+const { createVC, getIssuerKeys, fabricResolver } = require('../utils/vcService');
+const crypto = require('node:crypto');
+const { Resolver } = require('did-resolver');
+const { verifyJWT } = require('did-jwt');
 
 // exports.createClient = (req, res) => {
 
@@ -106,6 +108,43 @@ exports.createClient = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: `Issuance failed: ${err.message}` });
+    }
+};
+
+exports.verifyUserVC = async (req, res) => {
+    const { vc, userDid } = req.body;
+
+    const resolver = new Resolver(fabricResolver);
+
+    try {
+        // 1. Cryptographic Check using did-jwt
+        // This automatically calls the resolver, fetches the key, and checks the signature
+        const verifiedVC = await verifyJWT(vc, { resolver });
+
+        // 2. Ledger Anchoring Check
+        // We hash the incoming VC string to compare it with the proof on the ledger
+        const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
+
+        // Query your existing anchor logic
+        const anchor = await networkConnection.queryChaincode('readAnchor', [userDid]);
+
+        if (anchor.hash !== vcHash) {
+            return res.status(401).json({ error: "VC content does not match ledger anchor (Tampered)" });
+        }
+
+        if (anchor.status !== 'VALID') {
+            return res.status(401).json({ error: "Credential has been revoked" });
+        }
+
+        res.status(200).json({
+            message: "Verification Successful",
+            issuer: verifiedVC.issuer,
+            claims: verifiedVC.payload.vc.credentialSubject
+        });
+
+    } catch (err) {
+        console.error('Verification Error:', err);
+        res.status(401).json({ error: "Invalid Signature or DID resolution failed" });
     }
 };
 

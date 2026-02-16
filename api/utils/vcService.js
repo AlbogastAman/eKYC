@@ -1,25 +1,10 @@
-const { createJWT, ES256KSigner } = require('did-jwt');
-// const crypto = require('node:crypto');
+const { createJWT } = require('did-jwt');
+const crypto = require('node:crypto');
 const { Wallets } = require('fabric-network');
 const { buildPoseidon } = require('circomlibjs');
 const path = require('path');
-const crypto = require('crypto');
 const { derToJose } = require('ecdsa-sig-formatter');
-
-/**
- * Mock function to retrieve Org-specific Private Keys.
- * In production, these should be in a Secure Vault or HSM.
- */
-// const getIssuerKeysMock = async (orgNum) => {
-//     // These would typically be loaded from your Fabric Wallet or Environment
-//     // For this example, we use a deterministic "secret" based on the org number
-//     const privateKey = crypto.createHash('sha256').update(`org${orgNum}_secret_key`).digest('hex');
-
-//     return {
-//         issuerDid: `did:fabric:org${orgNum}`,
-//         privateKey: privateKey
-//     };
-// };
+const networkConnection = require('./networkConnection');
 
 /**
  * Retrieves the actual Fabric Private Key from the wallet.
@@ -28,10 +13,6 @@ const { derToJose } = require('ecdsa-sig-formatter');
  */
 const getIssuerKeys = async (orgNumber, ledgerUser) => {
     try {
-        // load the network configuration
-        // const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', `org${orgNumber}.example.com`, `connection-org${orgNumber}.json`);
-        // let ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-
         // Create a new file system based wallet for managing identities.
         const walletPath = path.join(__dirname, '../wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
@@ -76,10 +57,10 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
         const sign = crypto.createSign('SHA256');
         sign.update(data);
         sign.end();
-        
+
         // Step A: Get the standard DER signature
         const derSignature = sign.sign(privateKeyObject);
-        
+
         // Step B: Convert DER to JOSE (concatenated R and S values)
         return derToJose(derSignature, 'ES256');
     };
@@ -115,14 +96,36 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
 
     // 5. Create JWT (alg must be ES256 to match the Fabric key)
     const token = await createJWT(
-        payload, 
-        { issuer, signer }, 
+        payload,
+        { issuer, signer },
         { alg: 'ES256' }
     );
 
     return { jwt: token, salts };
 };
+
+const fabricResolver = {
+    fabric: async (did) => {
+        // Query the ledger for the Bank's Identity
+        const fiDoc = await networkConnection.queryChaincode('getDidDocument', [did]);
+
+        return {
+            didDocument: {
+                id: did,
+                verificationMethod: [{
+                    id: `${did}#key-1`,
+                    type: 'JsonWebKey2020',
+                    controller: did,
+                    publicKeyJwk: fiDoc.publicKeyJwk // Use the JWK we registered
+                }],
+                assertionMethod: [`${did}#key-1`]
+            }
+        };
+    }
+};
+
 module.exports = {
     createVC,
-    getIssuerKeys
+    getIssuerKeys,
+    fabricResolver,
 };

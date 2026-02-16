@@ -367,18 +367,18 @@ class eKYC extends Contract {
         return JSON.stringify(allResults);
     }
 
-  /**
-     * registerFI registers a FI's Public Identity (DID Document) on the ledger.
-     * @param {Context} ctx The transaction context
-     * @param {String} fiDid The DID of the FI (e.g., "did:fabric:org1")
-     * @param {String} publicKeyJwk The Public Key in JWK string format
-     */
+    /**
+       * registerFI registers a FI's Public Identity (DID Document) on the ledger.
+       * @param {Context} ctx The transaction context
+       * @param {String} fiDid The DID of the FI (e.g., "did:fabric:org1")
+       * @param {String} publicKeyJwk The Public Key in JWK string format
+       */
     async registerFI(ctx, fiDid, publicKeyJwk) {
         const cid = new ClientIdentity(ctx.stub);
-        
+
         // 1. CHECK: Is the user an Admin?
         // We check the 'hf.Registrar.Attributes' or look for 'admin' in the Distinguished Name (DN)
-        const x509Identifier = cid.getID(); 
+        const x509Identifier = cid.getID();
         if (!x509Identifier.toLowerCase().includes('admin')) {
             throw new Error('Unauthorized: Only administrative identities can register a Bank.');
         }
@@ -387,7 +387,7 @@ class eKYC extends Contract {
         // If caller is from Org1MSP, they should only register did:fabric:org1
         const callerMspId = cid.getMSPID(); // e.g., "Org1MSP"
         const expectedOrgSuffix = callerMspId.toLowerCase().replace('msp', ''); // "org1"
-        
+
         if (!fiDid.endsWith(expectedOrgSuffix)) {
             throw new Error(`Forbidden: ${callerMspId} cannot register a DID for ${fiDid}`);
         }
@@ -404,7 +404,7 @@ class eKYC extends Contract {
 
         // Use the fiDid as the key so it's easily resolvable by other FI
         await ctx.stub.putState(fiDid, Buffer.from(JSON.stringify(fiIdentity)));
-        
+
         console.info(`FI Registered: ${fiDid}`);
     }
 
@@ -417,6 +417,30 @@ class eKYC extends Contract {
             throw new Error(`The DID Document for ${did} was not found.`);
         }
         return dataBytes.toString();
+    }
+
+
+    /**
+ * readAnchor retrieves the credential metadata (hash) for a specific user.
+ * @param {Context} ctx The transaction context
+ * @param {String} userDid The DID of the user (the key used during anchoring)
+ */
+    async readAnchor(ctx, userDid) {
+        const anchorBytes = await ctx.stub.getState(userDid);
+
+        if (!anchorBytes || anchorBytes.length === 0) {
+            throw new Error(`No credential anchor found for user: ${userDid}`);
+        }
+
+        const anchor = JSON.parse(anchorBytes.toString());
+
+        // Security check: Ensure this is actually a credential anchor
+        if (anchor.docType !== 'credentialAnchor') {
+            throw new Error(`The record for ${userDid} is not a valid credential anchor.`);
+        }
+
+        // Return the anchor object (containing the hash, issuer, and status)
+        return anchor;
     }
 }
 
