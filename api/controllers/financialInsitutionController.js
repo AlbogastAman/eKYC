@@ -113,6 +113,7 @@ exports.createClient = async (req, res) => {
 
 exports.verifyUserVC = async (req, res) => {
     const { vc, userDid } = req.body;
+    console.log("Nafika#####", userDid);
 
     const resolver = new Resolver(fabricResolver);
 
@@ -120,7 +121,7 @@ exports.verifyUserVC = async (req, res) => {
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
         const verifiedVC = await verifyJWT(vc, { resolver });
-
+        console.log("verifiedVC#####", verifiedVC);
         // 2. Ledger Anchoring Check
         // We hash the incoming VC string to compare it with the proof on the ledger
         const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
