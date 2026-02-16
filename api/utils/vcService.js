@@ -12,32 +12,52 @@ const { Resolver } = require('did-resolver');
  * @param {string} orgNum - The organization number (e.g., 1 or 2).
  * @param {string} ledgerUser - The name of the identity (e.g., 'admin').
  */
-const getIssuerKeys = async (orgNumber, ledgerUser) => {
-    try {
-        // Create a new file system based wallet for managing identities.
-        const walletPath = path.join(__dirname, '../wallet');
-        const wallet = await Wallets.newFileSystemWallet(walletPath);
+// const getIssuerKeys = async (orgNumber, ledgerUser) => {
+//     try {
+//         // Create a new file system based wallet for managing identities.
+//         const walletPath = path.join(__dirname, '../wallet');
+//         const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-        // Check to see if we've already enrolled the user.
-        const identity = await wallet.get(ledgerUser);
+//         // Check to see if we've already enrolled the user.
+//         const identity = await wallet.get(ledgerUser);
 
-        if (!identity) {
-            throw new Error(`Identity ${ledgerUser} not found in wallet`);
-        }
+//         if (!identity) {
+//             throw new Error(`Identity ${ledgerUser} not found in wallet`);
+//         }
 
-        // Fabric identities store keys in 'credentials.privateKey'
-        const privateKey = identity.credentials.privateKey;
-        const certificate = identity.credentials.certificate;
+//         // Fabric identities store keys in 'credentials.privateKey'
+//         const privateKey = identity.credentials.privateKey;
+//         const certificate = identity.credentials.certificate;
 
-        return {
-            issuerDid: `did:fabric:org${orgNumber}`,
-            privateKey: privateKey, // This is the PEM string
-            certificate: certificate, // Used to verify the signature later
-            mspId: identity.mspId    // e.g., 'Org1MSP'
-        };
-    } catch (error) {
-        throw new Error(`Failed to load issuer keys: ${error.message}`);
-    }
+//         return {
+//             issuerDid: `did:fabric:org${orgNumber}`,
+//             privateKey: privateKey, // This is the PEM string
+//             certificate: certificate, // Used to verify the signature later
+//             mspId: identity.mspId    // e.g., 'Org1MSP'
+//         };
+//     } catch (error) {
+//         throw new Error(`Failed to load issuer keys: ${error.message}`);
+//     }
+// };
+
+
+const getIssuerKeys = async (orgName) => {
+    // Navigate to the Peer Organizations folder
+    const baseDir = path.resolve(__dirname, '../../test-network/organizations/peerOrganizations');
+    const orgDir = `${orgName}.example.com`;
+    
+    const certPath = path.join(baseDir, orgDir, `users/Admin@${orgDir}/msp/signcerts/cert.pem`);
+    const keystoreDir = path.join(baseDir, orgDir, `users/Admin@${orgDir}/msp/keystore`);
+    
+    // The private key filename is a random hash ending in _sk
+    const files = fs.readdirSync(keystoreDir);
+    const privateKeyPath = path.join(keystoreDir, files.find(f => f.endsWith('_sk')));
+
+    return {
+        issuerDid: `did:fabric:${orgName}`, // e.g. did:fabric:org1
+        privateKey: fs.readFileSync(privateKeyPath, 'utf8'),
+        certificate: fs.readFileSync(certPath, 'utf8')
+    };
 };
 
 

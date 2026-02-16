@@ -40,7 +40,7 @@ exports.createClient = async (req, res) => {
         const userDID = `did:fabric:ekyc:${login}`;
 
         // 1. Enhanced Key Retrieval (Using real Fabric identity)
-        const issuerKeys = await getIssuerKeys(orgNum, ledgerUser);
+        const issuerKeys = await getIssuerKeys(`org${orgNum}`);
 
         // 2. Generate Salts for each attribute (Vital for ZKP)
         // These salts MUST be saved in your local DB so the user can generate proofs later!
