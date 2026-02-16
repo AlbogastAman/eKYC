@@ -101,7 +101,8 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
         { issuer, signer },
         {
             alg: 'ES256',
-            //kid: 'did:fabric:org1#key-1'
+            typ: 'JWT',
+            kid: `${issuer}#key-1`
         }
     );
 
@@ -132,12 +133,12 @@ const createFabricResolver = (orgNumber, userName) => {
                 didDocument: {
                     id: did,
                     verificationMethod: [{
-                        id: did,
+                        id: `${did}#key-1`,
                         type: 'JsonWebKey2020',
                         controller: did,
                         publicKeyJwk: fiDoc.publicKeyJwk
                     }],
-                    assertionMethod: [did]
+                    assertionMethod: [`${did}#key-1`]
                 }
             };
         }
