@@ -7,8 +7,8 @@ const networkConnection = require('./utils/networkConnection');
 async function main() {
     // Expected usage: node registerOrg.js <orgName> <adminName> <orgNum>
     const orgName = process.argv[2];
-    const orgNum = process.argv[3];
-    const adminName = process.argv[4];
+    const adminName = process.argv[3];
+    const orgNum = process.argv[4];
     const mspId = `Org${orgNum}MSP`;
 
     // Simple validation
