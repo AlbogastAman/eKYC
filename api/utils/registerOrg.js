@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Wallets } = require('fabric-network');
-const { pem2jwk } = require('pem-jwk');
+const crypto = require('node:crypto');
 const networkConnection = require('./networkConnection');
 
 async function main() {
@@ -46,10 +46,13 @@ async function main() {
             throw new Error(`Certificate not found at: ${certPath}`);
         }
 
-        console.log("#certPath## :",certPath)
         // 1. Convert Certificate to JWK
-        const certPem = fs.readFileSync(certPath, 'ascii');
-        const jwk = pem2jwk(certPem);
+        //const certPem = fs.readFileSync(certPath, 'utf8');
+        //const jwk = pem2jwk(certPem);
+
+        const certPem = fs.readFileSync(certPath, 'utf8');
+        const publicKey = crypto.createPublicKey(certPem);
+        const jwk = publicKey.export({ format: 'jwk' });
 
         console.log(`jwk###: ${jwk}`);
         // Construct the Public Key JWK (Required for did-jwt)
@@ -67,7 +70,7 @@ async function main() {
             'registerFI',
             orgNum,     // 1 for Org1, 2 for Org2
             adminName,    // wallet user
-            [fiDid, JSON.stringify(publicKeyJwk)]
+            [fiDid, publicKeyJwk]
         );
 
         console.log(`Successfully registered ${fiDid} on the ledger.`);

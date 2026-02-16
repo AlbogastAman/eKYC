@@ -30,8 +30,7 @@
         "fabric-network": "^2.1.1",
         "http-errors": "^1.8.0",
         "jsonwebtoken": "^8.5.1",
-        "mongoose": "^5.9.21",
-        "pem-jwk": "^2.0.0"
+        "mongoose": "^5.9.21"
     },
     "devDependencies": {
         "async": "^3.2.0",
