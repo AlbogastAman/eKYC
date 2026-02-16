@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Wallets } = require('fabric-network');
 const { pem2jwk } = require('pem-jwk');
-const networkConnection = require('./utils/networkConnection');
+const networkConnection = require('./networkConnection');
 
 async function main() {
     // Expected usage: node registerOrg.js <orgName> <adminName> <orgNum>
