@@ -35,7 +35,7 @@ async function main() {
     // Path to the Admin certificate for the specified org
     const certPath = path.resolve(
         __dirname, '..', 'test-network', 'organizations', 'peerOrganizations',
-        `${orgNum}.example.com`, 'users', `Admin@${orgNum}.example.com`,
+        `${orgName}.example.com`, 'users', `Admin@${orgName}.example.com`,
         'msp', 'signcerts', 'cert.pem'
     );
 
