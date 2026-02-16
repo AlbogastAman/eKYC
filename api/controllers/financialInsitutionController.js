@@ -113,7 +113,6 @@ exports.createClient = async (req, res) => {
 
 exports.verifyUserVC = async (req, res) => {
     const { vc, userDid } = req.body;
-    console.log("Nafika#####", userDid);
 
     const resolver = new Resolver(fabricResolver);
 
