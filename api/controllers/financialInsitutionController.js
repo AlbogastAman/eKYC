@@ -133,7 +133,6 @@ exports.verifyUserVC = async (req, res) => {
         // 2. Ledger Anchoring Check
         // We hash the incoming VC string to compare it with the proof on the ledger
         const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
-        console.log("vcHash#####", vcHash);
         // Query your existing anchor login
         const anchor = await networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid]);
 

@@ -1,6 +1,5 @@
 const { createJWT } = require('did-jwt');
 const crypto = require('node:crypto');
-//const { Wallets } = require('fabric-network');
 const { buildPoseidon } = require('circomlibjs');
 const path = require('path');
 const fs = require('fs');
@@ -9,47 +8,18 @@ const networkConnection = require('./networkConnection');
 const { Resolver } = require('did-resolver');
 
 /**
- * Retrieves the actual Fabric Private Key from the wallet.
- * @param {string} orgNum - The organization number (e.g., 1 or 2).
- * @param {string} ledgerUser - The name of the identity (e.g., 'admin').
+ * Retrieves the actual Fabric Private Key of an orginisation.
+ * @param {string} orgName - The name of the identity (e.g., 'org1').
  */
-// const getIssuerKeys = async (orgNumber, ledgerUser) => {
-//     try {
-//         // Create a new file system based wallet for managing identities.
-//         const walletPath = path.join(__dirname, '../wallet');
-//         const wallet = await Wallets.newFileSystemWallet(walletPath);
-
-//         // Check to see if we've already enrolled the user.
-//         const identity = await wallet.get(ledgerUser);
-
-//         if (!identity) {
-//             throw new Error(`Identity ${ledgerUser} not found in wallet`);
-//         }
-
-//         // Fabric identities store keys in 'credentials.privateKey'
-//         const privateKey = identity.credentials.privateKey;
-//         const certificate = identity.credentials.certificate;
-
-//         return {
-//             issuerDid: `did:fabric:org${orgNumber}`,
-//             privateKey: privateKey, // This is the PEM string
-//             certificate: certificate, // Used to verify the signature later
-//             mspId: identity.mspId    // e.g., 'Org1MSP'
-//         };
-//     } catch (error) {
-//         throw new Error(`Failed to load issuer keys: ${error.message}`);
-//     }
-// };
-
 
 const getIssuerKeys = async (orgName) => {
     // Navigate to the Peer Organizations folder
     const baseDir = path.resolve(__dirname, '../../test-network/organizations/peerOrganizations');
     const orgDir = `${orgName}.example.com`;
-    
+
     const certPath = path.join(baseDir, orgDir, `users/Admin@${orgDir}/msp/signcerts/cert.pem`);
     const keystoreDir = path.join(baseDir, orgDir, `users/Admin@${orgDir}/msp/keystore`);
-    
+
     // The private key filename is a random hash ending in _sk
     const files = fs.readdirSync(keystoreDir);
     const privateKeyPath = path.join(keystoreDir, files.find(f => f.endsWith('_sk')));
@@ -76,16 +46,6 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
      * We use derToJose to convert it to the format did-jwt needs for ES256.
      */
     const signer = (data) => {
-        // const sign = crypto.createSign('SHA256');
-        // sign.update(data);
-        // sign.end();
-
-        // // Step A: Get the standard DER signature
-        // const derSignature = sign.sign(privateKeyObject);
-
-        // // Step B: Convert DER to JOSE (concatenated R and S values)
-        // return derToJose(derSignature, 'ES256');
-
 
         // Ensure data is a Buffer
         const dataBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
@@ -169,7 +129,6 @@ const createFabricResolver = (orgNumber, userName) => {
             );
 
             const fiDoc = JSON.parse(fiDataBuffer.toString());
-
 
             // Ensure x and y are clean Base64URL strings
             const cleanX = fixBase64Url(fiDoc.publicKeyJwk.x);
