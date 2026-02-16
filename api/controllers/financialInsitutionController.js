@@ -115,7 +115,8 @@ exports.verifyUserVC = async (req, res) => {
     const { vc, userDid } = req.body;
 
     const resolver = new Resolver(fabricResolver);
-
+    console.log("vc#####", vc);
+    console.log("userDid#####", userDid);
     try {
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
