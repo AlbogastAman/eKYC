@@ -99,7 +99,10 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
     const token = await createJWT(
         payload,
         { issuer, signer },
-        { alg: 'ES256' }
+        {
+            alg: 'ES256',
+            //kid: 'did:fabric:org1#key-1'
+        }
     );
 
     return { jwt: token, salts };
@@ -129,12 +132,12 @@ const createFabricResolver = (orgNumber, userName) => {
                 didDocument: {
                     id: did,
                     verificationMethod: [{
-                        id: `${did}#key-1`,
+                        id: did,
                         type: 'JsonWebKey2020',
                         controller: did,
                         publicKeyJwk: fiDoc.publicKeyJwk
                     }],
-                    assertionMethod: [`${did}#key-1`]
+                    assertionMethod: [did]
                 }
             };
         }
