@@ -125,6 +125,7 @@ exports.verifyUserVC = async (req, res) => {
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
         const verifiedVC = await verifyJWT(vc, { resolver });
+        console.log("##verifiedVC##", verifiedVC)
 
         // 2. Ledger Anchoring Check
         // We hash the incoming VC string to compare it with the proof on the ledger
@@ -155,8 +156,8 @@ exports.verifyUserVC = async (req, res) => {
 
         //https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
         // 2. Cross-check against your business requirements
-        const currentThreshold = "20080217"; // Age 18 check
-        const targetCountry = "834";         // e.g. Tanzania
+        const currentThreshold = process.env.DOB_THRESHOLD || "20080217"; // Age 18 check
+        const targetCountry = process.env.TARGET_COUNTRY || "834";         // e.g. Tanzania
 
         if (publicSignals[3] !== currentThreshold || publicSignals[4] !== targetCountry) {
             return res.status(401).json({ error: "Proof used incorrect criteria" });
@@ -166,13 +167,22 @@ exports.verifyUserVC = async (req, res) => {
 
         // Load the Verification Key ONCE at startup to save resources
         const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
-        console.log("####vKeyPath #### ",vKeyPath);
+        console.log("####vKeyPath #### ", vKeyPath);
         const vKey = JSON.parse(fs.readFileSync(vKeyPath));
 
         const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
         if (!isValid) {
             return res.status(401).json({ error: "Violation of eKYC requirements" });
         }
+
+        //Approve relation: FI to Client
+
+        // const { fiId } = req.body;
+
+        // let linkFItoClient = await networkConnection
+        //     .submitTransaction('approve', orgNumber, ledgerUser, [req.cookies.ledgerId, fiId])
+
+        // console.log("###linkFItoClient ##", linkFItoClient)
 
         res.status(200).json({
             message: "Verification Successful",
