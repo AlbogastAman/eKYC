@@ -35,23 +35,22 @@ const Client = () => {
     useEffect(() => {
         try {
             axios.all([
-                api.get('/client/getClientData'),
+                //api.get('/client/getClientData'),
                 api.get('/client/getApprovedFis')
             ])
                 .then(axios.spread(
-                    (clientData, approvedFis) => {
+                    (approvedFis) => {
                         //Handle separately
-                        if (clientData.status === 200) {
-                            clientData = clientData.data.clientData;
-                            setUserData(clientData, setClientData);
-                        }
-                        
+                        // if (clientData.status === 200) {
+                        //     clientData = clientData.data.clientData;
+                        //     setUserData(clientData, setClientData);
+                        // }
+
                         if (approvedFis.status === 200) {
                             approvedFis = approvedFis.data.approvedFis;
                             setApprovedFiList(approvedFis);
-                        }
-                        if (clientData.status !== 200 || approvedFis.status !== 200) {
-                            console.log('Oopps... something wrong, status code: client ' + clientData.status + ':fis: ' + approvedFis.status);
+                        }else {
+                            console.log('Oopps... something wrong, status code: ' + approvedFis.status);
                             return function cleanup() { }
                         }
                     }))
