@@ -7,6 +7,10 @@ const networkConnection = require('../utils/networkConnection');
 const { createVC, getIssuerKeys, createFabricResolver } = require('../utils/vcService');
 const crypto = require('node:crypto');
 const { verifyJWT, decodeJWT } = require('did-jwt');
+const snarkjs = require('snarkjs');
+
+const fs = require('fs');
+const path = require('path');
 
 // exports.createClient = (req, res) => {
 
@@ -111,20 +115,12 @@ exports.createClient = async (req, res) => {
 };
 
 exports.verifyUserVC = async (req, res) => {
-    const { vc, userDid } = req.body;
+    const { vc, userDid, proof, publicSignals } = req.body;
     let orgNumber = req.orgNum;
     let ledgerUser = req.ledgerUser;
     const resolver = createFabricResolver(orgNumber, ledgerUser);
 
     try {
-
-        const decoded = decodeJWT(vc);
-        console.log("Header KID:", decoded.header.kid);
-        console.log("Payload ISS:", decoded.payload.iss);
-
-        // Check if the signature length is exactly 64 bytes (86 characters in Base64URL)
-        const signature = vc.split('.')[2];
-        console.log("Signature Length (Base64URL):", signature.length);
 
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
@@ -145,10 +141,44 @@ exports.verifyUserVC = async (req, res) => {
             return res.status(401).json({ error: "Credential has been revoked" });
         }
 
+        //ZK Proofs - Check requirements
+
+        //1. Cross-check against your Verified VC
+        const vcHashes = verifiedVC.payload.vc.credentialSubject.zkProofs;
+        const hashesMatch = (
+            publicSignals[0] === vcHashes.dateOfBirthHash &&
+            publicSignals[1] === vcHashes.idNumberHash &&
+            publicSignals[2] === vcHashes.countryHash
+        );
+
+        if (!hashesMatch) return res.status(401).json({ error: "Proof doesn't match VC commitments" });
+
+        //https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
+        // 2. Cross-check against your business requirements
+        const currentThreshold = "20080217"; // Age 18 check
+        const targetCountry = "834";         // e.g. Tanzania
+
+        if (publicSignals[3] !== currentThreshold || publicSignals[4] !== targetCountry) {
+            return res.status(401).json({ error: "Proof used incorrect criteria" });
+        }
+
+        // 3. Mathematical check
+
+        // Load the Verification Key ONCE at startup to save resources
+        const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
+        console.log("####vKeyPath #### ",vKeyPath);
+        const vKey = JSON.parse(fs.readFileSync(vKeyPath));
+
+        const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
+        if (!isValid) {
+            return res.status(401).json({ error: "Violation of eKYC requirements" });
+        }
+
         res.status(200).json({
             message: "Verification Successful",
             issuer: verifiedVC.issuer,
-            claims: verifiedVC.payload.vc.credentialSubject
+            claims: verifiedVC.payload.vc.credentialSubject,
+            verified: true,
         });
 
     } catch (err) {

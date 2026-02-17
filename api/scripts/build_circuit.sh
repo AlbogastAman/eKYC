@@ -32,6 +32,6 @@ snarkjs groth16 setup build/requirements_check.r1cs build/pot15_final.ptau build
 
 # 6. Export Verification Key
 echo "📋 Exporting Verification Key..."
-snarkjs zkey export verificationkey build/requirements_check_final.zkey build/verification_key.json
+snarkjs zkey export verificationkey build/requirements_check_final.zkey build/requirements_check_key.json
 
 echo "✅ Build Complete!"

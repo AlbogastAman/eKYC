@@ -35,22 +35,18 @@ const Client = () => {
     useEffect(() => {
         try {
             axios.all([
-                //api.get('/client/getClientData'),
+                api.get('/client/getClientData'),
                 api.get('/client/getApprovedFis')
             ])
                 .then(axios.spread(
-                    (approvedFis) => {
-                        //Handle separately
-                        // if (clientData.status === 200) {
-                        //     clientData = clientData.data.clientData;
-                        //     setUserData(clientData, setClientData);
-                        // }
-
-                        if (approvedFis.status === 200) {
+                    (clientData, approvedFis) => {
+                        if (clientData.status === 200 && approvedFis.status === 200) {
+                            clientData = clientData.data.clientData;
                             approvedFis = approvedFis.data.approvedFis;
+                            setUserData(clientData, setClientData);
                             setApprovedFiList(approvedFis);
-                        }else {
-                            console.log('Oopps... something wrong, status code: ' + approvedFis.status);
+                        } else {
+                            console.log('Oopps... something wrong, status code ' + clientData.status);
                             return function cleanup() { }
                         }
                     }))
@@ -146,6 +142,7 @@ const Client = () => {
 
     const handleSubmitApprove = e => {
         e.preventDefault();
+
         if (approvedFiList.includes(fiIdApprove)) {
             setApprovedMsg(`${fiIdApprove} already approved`);
             setTimeout(() => {
