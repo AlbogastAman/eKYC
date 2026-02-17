@@ -11,6 +11,7 @@
         "pretest": "npm run lint",
         "test": "nyc mocha --recursive",
         "start": "node server.js",
+        "build:circuit": "bash scripts/build_circuit.sh",
         "dev": "nodemon server.js"
     },
     "engineStrict": true,
@@ -30,7 +31,9 @@
         "fabric-network": "^2.1.1",
         "http-errors": "^1.8.0",
         "jsonwebtoken": "^8.5.1",
-        "mongoose": "^5.9.21"
+        "mongoose": "^5.9.21",
+        "circomlib": "^2.0.5",
+        "snarkjs": "^0.7.0"
     },
     "devDependencies": {
         "async": "^3.2.0",

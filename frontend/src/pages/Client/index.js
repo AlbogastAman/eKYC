@@ -40,13 +40,18 @@ const Client = () => {
             ])
                 .then(axios.spread(
                     (clientData, approvedFis) => {
-                        if (clientData.status === 200 && approvedFis.status === 200) {
+                        //Handle separately
+                        if (clientData.status === 200) {
                             clientData = clientData.data.clientData;
-                            approvedFis = approvedFis.data.approvedFis;
                             setUserData(clientData, setClientData);
+                        }
+                        
+                        if (approvedFis.status === 200) {
+                            approvedFis = approvedFis.data.approvedFis;
                             setApprovedFiList(approvedFis);
-                        } else {
-                            console.log('Oopps... something wrong, status code ' + clientData.status);
+                        }
+                        if (clientData.status !== 200 || approvedFis.status !== 200) {
+                            console.log('Oopps... something wrong, status code: client ' + clientData.status + ':fis: ' + approvedFis.status);
                             return function cleanup() { }
                         }
                     }))
@@ -142,7 +147,6 @@ const Client = () => {
 
     const handleSubmitApprove = e => {
         e.preventDefault();
-
         if (approvedFiList.includes(fiIdApprove)) {
             setApprovedMsg(`${fiIdApprove} already approved`);
             setTimeout(() => {
