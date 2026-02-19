@@ -116,6 +116,7 @@ exports.createClient = async (req, res) => {
 
 exports.verifyUserVC = async (req, res) => {
     const { vc, userDid, proof, publicSignals } = req.body;
+    console.log("#####req.body### ", req.body)
     let orgNumber = req.orgNum;
     let ledgerUser = req.ledgerUser;
     const resolver = createFabricResolver(orgNumber, ledgerUser);
