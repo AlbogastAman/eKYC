@@ -56,20 +56,21 @@ exports.login = [
 exports.vc = [
     validator
         .body('vc')
-        .isLength({ min: 1 })
-        .trim()
+        .isString()
+        .notEmpty()
         .withMessage('VC must be specified.')
-        .escape(),
+        .trim(),
     validator
         .body('userDid')
-        .isLength({ min: 1 })
-        .trim()
+        .isString()
+        .notEmpty()
         .withMessage('User DID must be specified.')
+        .trim()
         .escape(),
     validator
         .body('proof')
         .notEmpty()
-        .withMessage('Proof must be specified.'),
+        .withMessage('Proof must be specified.'), 
     validator
         .body('publicSignals')
         .isArray({ min: 5, max: 5 })
