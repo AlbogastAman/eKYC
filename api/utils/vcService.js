@@ -60,12 +60,46 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
     };
 
     // 3. Poseidon Setup (unchanged)
-    const poseidon = await buildPoseidon();
-    const toBigInt = (str) => str ? BigInt('0x' + Buffer.from(str).toString('hex')) : BigInt(0);
+    // const poseidon = await buildPoseidon();
+    // const toBigInt = (str) => str ? BigInt('0x' + Buffer.from(str).toString('hex')) : BigInt(0);
 
-    const dobHash = poseidon.F.toString(poseidon([toBigInt(claims.dateOfBirth), BigInt("0x" + salts.dateOfBirth)]));
-    const idHash = poseidon.F.toString(poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)]));
-    const countryHash = poseidon.F.toString(poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)]));
+    // const dobHash = poseidon.F.toString(poseidon([toBigInt(claims.dateOfBirth.toString().replaceAll('-', '')), BigInt("0x" + salts.dateOfBirth)]));
+    // const idHash = poseidon.F.toString(poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)]));
+    // const countryHash = poseidon.F.toString(poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)]));
+
+    const poseidon = await buildPoseidon();
+
+    /**
+     * Converts alphanumeric strings (e.g., "ALN123") to a BigInt via ASCII bytes.
+     * Use this for ID Numbers or names.
+     */
+    const textToBigInt = (str) =>
+        str ? BigInt('0x' + Buffer.from(str.toString()).toString('hex')) : BigInt(0);
+
+    /**
+     * Converts numeric strings (e.g., "20040617") to a literal BigInt.
+     * Use this for Dates and Country Codes so they can be compared in circuits.
+     */
+    const numToBigInt = (str) =>
+        str ? BigInt(str.toString().replace(/\D/g, '')) : BigInt(0);
+
+    // 1. DOB: Hashed as a PURE NUMBER (e.g., 20040617)
+    const dobValue = numToBigInt(claims.dateOfBirth);
+    const dobHash = poseidon.F.toString(
+        poseidon([dobValue, BigInt("0x" + salts.dateOfBirth)])
+    );
+
+    // 2. ID Number: Hashed as TEXT BYTES (e.g., "ALN123" -> 71790443442723)
+    const idValue = textToBigInt(claims.idNumber);
+    const idHash = poseidon.F.toString(
+        poseidon([idValue, BigInt("0x" + salts.idNumber)])
+    );
+
+    // 3. Country: Hashed as a PURE NUMBER (e.g., 834)
+    const countryValue = numToBigInt(claims.country);
+    const countryHash = poseidon.F.toString(
+        poseidon([countryValue, BigInt("0x" + salts.country)])
+    );
 
     // 4. Build Payload
     const payload = {
