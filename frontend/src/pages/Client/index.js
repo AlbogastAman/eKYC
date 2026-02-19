@@ -19,7 +19,6 @@ const Client = () => {
     const [approvedFiList, setApprovedFiList] = useState([]);
     const [userRequests, setUserRequests] = useState([]);
 
-
     const [reqIdApprove, setReqIdApprove] = useState('');
     const [fiIdApprove, setFiIdApprove] = useState('');
     const [approvedMsg, setApprovedMsg] = useState('');

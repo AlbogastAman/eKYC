@@ -57,8 +57,9 @@ exports.getClientData = (req, res) => {
 
 exports.getClientRequests = async (req, res) => {
     try {
+        console.log("#####req.cookies.ledgerId:  ",req.cookies.ledgerId);
         // We 'await' the result directly from the controller
-        const data = await io.getRequestsByClient(req.params.did);
+        const data = await io.getRequestsByClient(req.cookies.ledgerId);
         console.log("####data");
         // If it succeeds, send the JSON response
         return res.json(data);
