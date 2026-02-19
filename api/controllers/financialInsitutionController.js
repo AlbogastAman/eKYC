@@ -175,11 +175,11 @@ exports.verifyUserVC = async (req, res) => {
         }
 
         //Approve relation: FI to Client
+        let response = await io.fiApprovalRequest(
+            { fi: ledgerUser, client: userDid }
+        );
 
-        let linkFItoClient = await networkConnection
-            .submitTransaction('approve', orgNumber, ledgerUser, [userDid, ledgerUser])
-
-        console.log("###linkFItoClient ##", linkFItoClient)
+        console.log("###linkFItoClient ##", response)
 
         res.status(200).json({
             message: "Verification Successful",

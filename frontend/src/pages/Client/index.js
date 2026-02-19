@@ -17,6 +17,10 @@ const Client = () => {
 
     const [clientData, setClientData] = useState([]);
     const [approvedFiList, setApprovedFiList] = useState([]);
+    const [userRequests, setUserRequests] = useState([]);
+
+
+    const [reqIdApprove, setReqIdApprove] = useState('');
     const [fiIdApprove, setFiIdApprove] = useState('');
     const [approvedMsg, setApprovedMsg] = useState('');
     const [isLoadingApprove, setIsLoadingApprove] = useState(false);
@@ -34,9 +38,35 @@ const Client = () => {
 
     useEffect(() => {
         try {
+            axios([
+                api.get('/client/getClientRequests')
+            ])
+                .then(axios.spread(
+                    (requestsData) => {
+                        if (requestsData.status === 200) {
+                            requestsData = requestsData.data;
+                            setUserRequests(requestsData);
+                        } else {
+                            console.log('Oopps... something wrong, status code ' + requestsData.status);
+                            return function cleanup() { }
+                        }
+                    }))
+                .catch((err) => {
+                    console.log('Oopps... something wrong');
+                    console.log(err);
+                    return function cleanup() { }
+                });
+        } catch (error) {
+            console.log('Oopps... something wrong');
+            console.log(error);
+            return function cleanup() { }
+        }
+
+        try {
             axios.all([
                 api.get('/client/getClientData'),
-                api.get('/client/getApprovedFis')
+                api.get('/client/getApprovedFis'),
+                api.get('/client/getClientRequests')
             ])
                 .then(axios.spread(
                     (clientData, approvedFis) => {
@@ -66,7 +96,7 @@ const Client = () => {
         if (isLoadingApprove) {
             try {
                 api
-                    .post('/client/approve', qs.stringify({ fiId: fiIdApprove }))
+                    .post('/client/approve/' + reqIdApprove, qs.stringify({ fiId: fiIdApprove }))
                     .then(res => {
                         if (res.status === 200) {
                             setApprovedMsg(res.data.message);
@@ -170,6 +200,7 @@ const Client = () => {
         }
     };
 
+
     function handleClickLogout() {
         removeCookie('userJWT');
         removeCookie('ledgerId');
@@ -206,6 +237,50 @@ const Client = () => {
                             {approvedFiList.join(', ')}
                         </Box>
                     </Flex>
+                </Card>
+
+                <Card mt={20} p={5}>
+                    <Flex mb={4}>
+                        <Box ml={10}>
+                            {userRequests.length > 0 ? (
+                                <Heading as={'h3'}>Requests from financial institutions:</Heading>
+                            ) : (
+                                <Heading as={'h3'}>You have no requests from financial institutions</Heading>
+                            )}
+                        </Box>
+                    </Flex>
+
+                    {/* Map through the requests and display each one */}
+                    {userRequests.map((request) => (
+                        <Box
+                            key={request._id}
+                            p={4}
+                            borderWidth="1px"
+                            borderRadius="lg"
+                            mb={3}
+                            bg={request.approved === 'Y' ? 'green.50' : 'white'}
+                        >
+                            <Flex justifyContent="space-between" alignItems="center">
+                                <Box>
+                                    <Text fontWeight="bold" fontSize="lg">{request.fi}</Text>
+                                    <Text fontSize="sm" color="gray.600">Status: {request.approved === 'Y' ? 'Approved' : 'Pending'}</Text>
+                                </Box>
+
+                                {request.approved === 'N' && (
+                                    <Button
+                                        colorScheme="blue"
+                                        onClick={() => {
+                                            setReqIdApprove(request._id);
+                                            setFiIdApprove(request.fi);
+                                            setIsLoadingApprove(true);
+                                        }}
+                                    >
+                                        Approve
+                                    </Button>
+                                )}
+                            </Flex>
+                        </Box>
+                    ))}
                 </Card>
                 <Card mt={20}>
                     <Heading as={'h2'}>Approve financial institution</Heading>
