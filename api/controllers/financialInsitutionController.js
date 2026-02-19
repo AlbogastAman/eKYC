@@ -118,7 +118,6 @@ exports.verifyUserVC = async (req, res) => {
     const { vc, userDid, proof, publicSignals } = req.body;
     let orgNumber = req.orgNum;
     let ledgerUser = req.ledgerUser;
-    console.log("#####ORG### ", ledgerUser, orgNumber)
     const resolver = createFabricResolver(orgNumber, ledgerUser);
 
     try {
@@ -175,15 +174,12 @@ exports.verifyUserVC = async (req, res) => {
             return res.status(401).json({ error: "Violation of eKYC requirements" });
         }
 
-        console.log("###Prof isValid ##", isValid)
         //Approve relation: FI to Client
 
-        // const { fiId } = req.body;
+        let linkFItoClient = await networkConnection
+            .submitTransaction('approve', orgNumber, ledgerUser, [userDid, ledgerUser])
 
-        // let linkFItoClient = await networkConnection
-        //     .submitTransaction('approve', orgNumber, ledgerUser, [req.cookies.ledgerId, fiId])
-
-        // console.log("###linkFItoClient ##", linkFItoClient)
+        console.log("###linkFItoClient ##", linkFItoClient)
 
         res.status(200).json({
             message: "Verification Successful",
