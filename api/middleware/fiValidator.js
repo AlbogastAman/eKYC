@@ -67,9 +67,9 @@ exports.vc = [
         .withMessage('User DID must be specified.')
         .escape(),
     validator
-        .body('proofs')
+        .body('proof')
         .notEmpty()
-        .withMessage('Proofs must be specified.'),
+        .withMessage('Proof must be specified.'),
     validator
         .body('publicSignals')
         .isArray({ min: 5, max: 5 })
