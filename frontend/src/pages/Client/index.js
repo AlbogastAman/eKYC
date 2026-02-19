@@ -37,45 +37,19 @@ const Client = () => {
 
     useEffect(() => {
         try {
-            axios([
-                api.get('/client/getClientRequests')
+            axios.all([
+                api.get('/client/getClientRequests'),
+                api.get('/client/getApprovedFis')
             ])
                 .then(axios.spread(
-                    (requestsData) => {
-                        if (requestsData.status === 200) {
+                    (requestsData, approvedFis) => {
+                        if (requestsData.status === 200 && approvedFis.status === 200) {
                             requestsData = requestsData.data;
                             setUserRequests(requestsData);
-                        } else {
-                            console.log('Oopps... something wrong, status code ' + requestsData.status);
-                            return function cleanup() { }
-                        }
-                    }))
-                .catch((err) => {
-                    console.log('Oopps... something wrong');
-                    console.log(err);
-                    return function cleanup() { }
-                });
-        } catch (error) {
-            console.log('Oopps... something wrong');
-            console.log(error);
-            return function cleanup() { }
-        }
-
-        try {
-            axios.all([
-                api.get('/client/getClientData'),
-                api.get('/client/getApprovedFis'),
-                api.get('/client/getClientRequests')
-            ])
-                .then(axios.spread(
-                    (clientData, approvedFis) => {
-                        if (clientData.status === 200 && approvedFis.status === 200) {
-                            clientData = clientData.data.clientData;
                             approvedFis = approvedFis.data.approvedFis;
-                            setUserData(clientData, setClientData);
                             setApprovedFiList(approvedFis);
                         } else {
-                            console.log('Oopps... something wrong, status code ' + clientData.status);
+                            console.log('Oopps... something wrong, status code ' + requestsData.status);
                             return function cleanup() { }
                         }
                     }))
