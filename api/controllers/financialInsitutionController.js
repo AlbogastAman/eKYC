@@ -176,7 +176,7 @@ exports.verifyUserVC = async (req, res) => {
 
         //Approve relation: FI to Client
         let response = await io.fiApprovalRequest(
-            { fi: ledgerUser, client: userDid }
+            ledgerUser, userDid
         );
 
         console.log("###linkFItoClient ##", response)
