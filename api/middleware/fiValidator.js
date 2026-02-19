@@ -65,5 +65,13 @@ exports.vc = [
         .isLength({ min: 1 })
         .trim()
         .withMessage('User DID must be specified.')
-        .escape()
+        .escape(),
+    validator
+        .body('proofs')
+        .notEmpty()
+        .withMessage('Proofs must be specified.'),
+    validator
+        .body('publicSignals')
+        .isArray({ min: 5, max: 5 })
+        .withMessage('Public signals must be an array of exactly 5 values.')
 ];
