@@ -7,6 +7,8 @@ exports.validate = (req, res, next) => {
     if (errors.isEmpty()) {
         return next();
     }
+
+    console.log("kuna errors####: ")
     const extractedErrors = [];
     errors.array().map(err => extractedErrors.push({ [err.param]: err.msg }));
 

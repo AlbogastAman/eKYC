@@ -116,9 +116,9 @@ exports.createClient = async (req, res) => {
 
 exports.verifyUserVC = async (req, res) => {
     const { vc, userDid, proof, publicSignals } = req.body;
-    console.log("#####req.body### ", req.body)
     let orgNumber = req.orgNum;
     let ledgerUser = req.ledgerUser;
+    console.log("#####ORG### ", ledgerUser, orgNumber)
     const resolver = createFabricResolver(orgNumber, ledgerUser);
 
     try {
@@ -126,7 +126,6 @@ exports.verifyUserVC = async (req, res) => {
         // 1. Cryptographic Check using did-jwt
         // This automatically calls the resolver, fetches the key, and checks the signature
         const verifiedVC = await verifyJWT(vc, { resolver });
-        console.log("##verifiedVC##", verifiedVC)
 
         // 2. Ledger Anchoring Check
         // We hash the incoming VC string to compare it with the proof on the ledger
@@ -156,7 +155,7 @@ exports.verifyUserVC = async (req, res) => {
         if (!hashesMatch) return res.status(401).json({ error: "Proof doesn't match VC commitments" });
 
         //https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
-        // 2. Cross-check against your business requirements
+        // 2. Cross-check against your business requirements 
         const currentThreshold = process.env.DOB_THRESHOLD || "20080217"; // Age 18 check
         const targetCountry = process.env.TARGET_COUNTRY || "834";         // e.g. Tanzania
 
@@ -168,7 +167,7 @@ exports.verifyUserVC = async (req, res) => {
 
         // Load the Verification Key ONCE at startup to save resources
         const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
-        console.log("####vKeyPath #### ", vKeyPath);
+
         const vKey = JSON.parse(fs.readFileSync(vKeyPath));
 
         const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
@@ -176,6 +175,7 @@ exports.verifyUserVC = async (req, res) => {
             return res.status(401).json({ error: "Violation of eKYC requirements" });
         }
 
+        console.log("###Prof isValid ##", isValid)
         //Approve relation: FI to Client
 
         // const { fiId } = req.body;
