@@ -3,8 +3,8 @@
 # 1. Configuration
 CC_NAME="eKYC"
 CC_SRC_PATH="../../chaincode/javascript/" 
-CC_VERSION="2.3"                       
-CC_SEQUENCE="5"                        
+CC_VERSION="2.4"                       
+CC_SEQUENCE="6"                        
 CHANNEL_NAME="mychannel"
 
 # Path setup for the test-network directory
