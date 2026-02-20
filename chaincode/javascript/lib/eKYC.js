@@ -180,6 +180,7 @@ class eKYC extends Contract {
         const callerId = this.getCallerId(ctx);
 
         console.log("####clientData: ", clientData);
+        console.log("####callerId: ", callerId);
         // Check caller is who registered
         if (clientData.issuer !== callerId) {
 
@@ -192,7 +193,7 @@ class eKYC extends Contract {
 
         // Get only requested fields
         fields = fields.split(',').map(field => field.trim());
-
+        console.log("####fields: ", fields);
         let result = {};
         for (const field of fields) {
             if (clientData.hasOwnProperty(field)) {
