@@ -37,17 +37,12 @@ exports.login = async (req, res) => {
 
 exports.getClientData = (req, res) => {
 
-    //const fields = ['name', 'address', 'dateOfBirth', 'idNumber', 'whoRegistered'];
-    const fields = ['did', 'issuer', 'status'];
-    console.log("req########", req.ledgerUser)
+    const fields = ['did', 'name', 'address', 'whoRegistered'];
     networkConnection
         .evaluateTransaction('getClientData', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fields || []])
         .then(result => {
             if (result) {
-                console.log("req######## result: ", result)
                 if (result.length > 0) {
-                    console.log("req######## result: >0 ")
-                    console.log("req######## result parsed: ", JSON.parse(Buffer.from(result.toString())))
                     return res.json({ clientData: JSON.parse(Buffer.from(result.toString())) });
                 }
                 return res.json({ clientData: result.toString() });
@@ -61,10 +56,8 @@ exports.getClientData = (req, res) => {
 
 exports.getClientRequests = async (req, res) => {
     try {
-        console.log("#####req.cookies.ledgerId:  ", req.cookies.ledgerId);
         // We 'await' the result directly from the controller
         const data = await io.getRequestsByClient(req.cookies.ledgerId);
-        console.log("####data");
         // If it succeeds, send the JSON response
         return res.json(data);
     } catch (err) {
@@ -78,16 +71,10 @@ exports.approve = async (req, res) => {
 
     const { fiId } = req.body;
     const { reqId } = req.params;
-    console.log("org#: ", req.orgNum);
-    console.log("ledger user#: ", req.ledgerUser);
-    console.log("req.cookies.ledgerId#: ", req.cookies.ledgerId);
-    console.log("fiId#: ", fiId);
-    console.log("reqId#: ", reqId);
 
     networkConnection
         .submitTransaction('approve', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fiId])
         .then(async result => {
-            console.log("#Naingia hapa#####");
             if (result) {
                 await io.approveIdentityRequest(reqId);
                 return res.json({ message: `Financial Institution ${fiId} approved by ${req.cookies.ledgerId}` });
@@ -95,7 +82,6 @@ exports.approve = async (req, res) => {
             return res.status(500).json({ error: 'Something went wrong' });
         })
         .catch((err) => {
-            console.log("#Naingia hapa error#####", err);
             return res.status(500).json({ error: `Something went wrong\n ${err}` });
         });
 };

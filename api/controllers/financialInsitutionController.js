@@ -42,6 +42,8 @@ exports.createClient = async (req, res) => {
     const { orgNum, ledgerUser } = req;
     try {
         const userDID = `did:fabric:ekyc:${login}`;
+        //All Non-PII to be shared on ledger
+        const clientData = JSON.stringify({ "did": userDID, name, address, whoRegistered: { orgNum, ledgerUser } });
 
         // 1. Enhanced Key Retrieval (Using real Fabric identity)
         const issuerKeys = await getIssuerKeys(`org${orgNum}`);
@@ -80,7 +82,7 @@ exports.createClient = async (req, res) => {
             'anchorCredential',
             orgNum,
             ledgerUser,
-            [userDID, credentialCommitment]
+            [clientData, credentialCommitment]
         );
 
         // 6. Save locally (Including the salts!)

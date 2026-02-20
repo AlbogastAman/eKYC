@@ -27,9 +27,6 @@ const Client = () => {
     const [removedMsg, setRemovedMsg] = useState('');
     const [isLoadingRemove, setIsLoadingRemove] = useState(false);
 
-    function handleChooseFiApprove(e) {
-        setFiIdApprove(e.target.value.toUpperCase());
-    };
 
     function handleChooseFiRemove(e) {
         setFiIdRemove(e.target.value.toUpperCase());
@@ -38,46 +35,21 @@ const Client = () => {
     useEffect(() => {
         try {
             axios.all([
+                api.get('/client/getClientData'),
                 api.get('/client/getClientRequests'),
                 api.get('/client/getApprovedFis')
             ])
                 .then(axios.spread(
-                    (requestsData, approvedFis) => {
-                        if (requestsData.status === 200 && approvedFis.status === 200) {
+                    (clientData, requestsData, approvedFis) => {
+                        if (clientData.status === 200 && requestsData.status === 200 && approvedFis.status === 200) {
+                            clientData = clientData.data.clientData;
+                            setUserData(clientData, setClientData);
                             requestsData = requestsData.data;
                             setUserRequests(requestsData);
                             approvedFis = approvedFis.data.approvedFis;
                             setApprovedFiList(approvedFis);
                         } else {
-                            console.log('Oopps... something wrong, status code ' + requestsData.status);
-                            return function cleanup() { }
-                        }
-                    }))
-                .catch((err) => {
-                    console.log('Oopps... something wrong');
-                    console.log(err);
-                    return function cleanup() { }
-                });
-        } catch (error) {
-            console.log('Oopps... something wrong');
-            console.log(error);
-            return function cleanup() { }
-        }
-    }, []);
-
-    useEffect(() => {
-        try {
-
-            axios([
-                api.get('/client/getClientData'),
-            ])
-                .then(axios.spread(
-                    (clientData) => {
-                        if (clientData.status === 200) {
-                            clientData = clientData.data.clientData;
-                            setUserData(clientData, setClientData);
-                        } else {
-                            console.log('Oopps... something wrong, status code ' + clientData.status);
+                            console.log('Oopps... something wrong, status code ',clientData.status,requestsData.status,approvedFis.status);
                             return function cleanup() { }
                         }
                     }))
@@ -251,6 +223,23 @@ const Client = () => {
                         </Box>
                     </Flex>
 
+                    {approvedMsg && (
+                        <Box
+                            px={4}
+                            py={3}
+                            mx={10}
+                            mb={4}
+                            bg="green.50"
+                            border="1px solid"
+                            borderColor="green.200"
+                            borderRadius="md"
+                        >
+                            <Text color="green.700" fontWeight="medium">
+                                {approvedMsg}
+                            </Text>
+                        </Box>
+                    )}
+
                     {/* Map through the requests and display each one */}
                     {userRequests.map((request) => (
                         <Box
@@ -282,36 +271,6 @@ const Client = () => {
                             </Flex>
                         </Box>
                     ))}
-                </Card>
-                <Card mt={20}>
-                    <Heading as={'h2'}>Approve financial institution</Heading>
-                    <Form onSubmit={handleSubmitApprove}>
-                        <Flex mx={-3}>
-                            <Box width={1} px={3}>
-                                <Field label="Financial institution ID" width={1}>
-                                    <Form.Input
-                                        type="text"
-                                        required
-                                        onChange={handleChooseFiApprove}
-                                        value={fiIdApprove}
-                                        width={1}
-                                    />
-                                </Field>
-                            </Box>
-                        </Flex>
-                        <Flex mx={-3} alignItems={'center'}>
-                            <Box px={3}>
-                                <Button type="submit" disabled={isLoadingApprove}>
-                                    {isLoadingApprove ? <Loader color="white" /> : <p>Approve</p>}
-                                </Button>
-                            </Box>
-                            {approvedMsg &&
-                                <Box px={3}>
-                                    <Text>{approvedMsg}</Text>
-                                </Box>
-                            }
-                        </Flex>
-                    </Form>
                 </Card>
                 <Card mt={20}>
                     <Heading as={'h2'}>Remove financial institution approval</Heading>

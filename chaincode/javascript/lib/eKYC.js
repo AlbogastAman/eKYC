@@ -71,15 +71,14 @@ class eKYC extends Contract {
      * @returns {boolean} is who registered or not, return null if client does not exists or does not have data
      */
     async isWhoRegistered(ctx, clientId) {
-        const clientAsBytes = await ctx.stub.getState(clientId);
+        const clientAsBytes = await ctx.stub.getState(`data:${clientId}`);
         if (!clientAsBytes || clientAsBytes.length === 0) {
             return null;
         }
         const clientData = JSON.parse(clientAsBytes.toString());
         const callerId = this.getCallerId(ctx);
 
-        // return clientData.whoRegistered.ledgerUser === callerId;
-        return clientData.issuer === callerId;
+        return clientData.whoRegistered.ledgerUser === callerId;
     }
 
     /**
@@ -122,14 +121,23 @@ class eKYC extends Contract {
 
     /**
      * @param {Context} ctx
-     * @param {string} userDid - The Decentralized Identifier (e.g., did:fabric:AMALB)
+     * @param {object} clientData
      * @param {string} credentialHash - The SHA256 hash of the VC
      */
-    async anchorCredential(ctx, userDid, credentialHash) {
+    async anchorCredential(ctx, clientData, credentialHash) {
         console.info('============= START : Anchor Credential ===========');
 
+        clientData = JSON.parse(clientData);
         const callerId = this.getCallerId(ctx);
 
+        if (clientData.whoRegistered.ledgerUser !== callerId) {
+            throw new Error('Unauthorized: Caller mismatch');
+        }
+
+        const existing = await ctx.stub.getState(clientData.userDid);
+        if (existing && existing.length > 0) {
+            throw new Error('Client already exists');
+        }
         // Security check: Ensure the caller is authorized
         // (You can add logic here to check if callerId belongs to a verified FI)
 
@@ -139,7 +147,7 @@ class eKYC extends Contract {
 
         const anchor = {
             docType: 'credentialAnchor',
-            did: userDid,
+            did: clientData.userDid,
             hash: credentialHash, // Only the proof, no PII
             issuer: callerId,
             status: 'VALID',
@@ -147,18 +155,26 @@ class eKYC extends Contract {
         };
 
         // Store the anchor using the DID as the key
-        await ctx.stub.putState(userDid, Buffer.from(JSON.stringify(anchor)));
+        await ctx.stub.putState(clientData.userDid, Buffer.from(JSON.stringify(anchor)));
 
         // Maintain your composite keys so FIs can still see which clients they registered
-        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [userDid, callerId]);
-        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, userDid]);
+        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [clientData.userDid, callerId]);
+        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, clientData.userDid]);
 
         await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
         await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
 
+        const client = {
+            docType: 'client',
+            ...clientData
+        };
+
+        // Store the non-pii using the DID as the key
+        await ctx.stub.putState(`data:${clientData.userDid}`, Buffer.from(JSON.stringify(client)));
+
         console.info('============= END : Anchor Credential ===========');
 
-        return userDid;
+        return clientData.userDid;
     }
 
     /**
@@ -171,7 +187,7 @@ class eKYC extends Contract {
      */
     async getClientData(ctx, clientId, fields) {
 
-        const clientAsBytes = await ctx.stub.getState(clientId);
+        const clientAsBytes = await ctx.stub.getState(`data:${clientId}`);
         if (!clientAsBytes || clientAsBytes.length === 0) {
             return null;
         }
@@ -179,11 +195,8 @@ class eKYC extends Contract {
         const clientData = JSON.parse(clientAsBytes.toString());
         const callerId = this.getCallerId(ctx);
 
-        console.log("####clientData: ", clientData);
-        console.log("####callerId: ", callerId);
         // Check caller is who registered
-        if (clientData.issuer !== callerId) {
-
+        if (clientData.whoRegistered.ledgerUser !== callerId) {
             // If caller is not who registered, check if caller is approved
             const relations = await this.getRelationByFi(ctx, callerId);
             if (!relations.includes(clientId)) {
@@ -193,7 +206,7 @@ class eKYC extends Contract {
 
         // Get only requested fields
         fields = fields.split(',').map(field => field.trim());
-        console.log("####fields: ", fields);
+
         let result = {};
         for (const field of fields) {
             if (clientData.hasOwnProperty(field)) {
