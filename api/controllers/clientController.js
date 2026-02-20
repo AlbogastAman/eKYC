@@ -38,7 +38,7 @@ exports.login = async (req, res) => {
 exports.getClientData = (req, res) => {
 
     const fields = ['name', 'address', 'dateOfBirth', 'idNumber', 'whoRegistered'];
-    console.log("req########", req)
+    console.log("req########", req.ledgerUser)
     networkConnection
         .evaluateTransaction('getClientData', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fields || []])
         .then(result => {
