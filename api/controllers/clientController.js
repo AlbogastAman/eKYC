@@ -57,7 +57,7 @@ exports.getClientData = (req, res) => {
 
 exports.getClientRequests = async (req, res) => {
     try {
-        console.log("#####req.cookies.ledgerId:  ",req.cookies.ledgerId);
+        console.log("#####req.cookies.ledgerId:  ", req.cookies.ledgerId);
         // We 'await' the result directly from the controller
         const data = await io.getRequestsByClient(req.cookies.ledgerId);
         console.log("####data");
@@ -74,6 +74,11 @@ exports.approve = async (req, res) => {
 
     const { fiId } = req.body;
     const { reqId } = req.params;
+    console.log("org#: ", req.orgNum);
+    console.log("ledger user#: ", req.ledgerUser);
+    console.log("req.cookies.ledgerId#: ", req.cookies.ledgerId);
+    console.log("fiId#: ", fiId);
+    console.log("reqId#: ", reqId);
 
     networkConnection
         .submitTransaction('approve', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fiId])
