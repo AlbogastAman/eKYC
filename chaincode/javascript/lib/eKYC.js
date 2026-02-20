@@ -78,7 +78,8 @@ class eKYC extends Contract {
         const clientData = JSON.parse(clientAsBytes.toString());
         const callerId = this.getCallerId(ctx);
 
-        return clientData.whoRegistered.ledgerUser === callerId;
+        // return clientData.whoRegistered.ledgerUser === callerId;
+        return clientData.issuer === callerId;
     }
 
     /**
@@ -178,8 +179,9 @@ class eKYC extends Contract {
         const clientData = JSON.parse(clientAsBytes.toString());
         const callerId = this.getCallerId(ctx);
 
+        console.log("####clientData: ", clientData);
         // Check caller is who registered
-        if (clientData.whoRegistered.ledgerUser !== callerId) {
+        if (clientData.issuer !== callerId) {
 
             // If caller is not who registered, check if caller is approved
             const relations = await this.getRelationByFi(ctx, callerId);
