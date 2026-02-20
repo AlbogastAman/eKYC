@@ -22,7 +22,7 @@ router.get('/getClientRequests',
     credentials.getWhoRegistered,
     clientController.getClientRequests);
 
-router.post('/approve',
+router.post('/approve/:reqId',
     checkLogin,
     credentials.getWhoRegistered,
     clientController.approve);
