@@ -63,6 +63,25 @@ const Client = () => {
             console.log(error);
             return function cleanup() { }
         }
+
+        axios.all([
+            api.get('/client/getClientData'),
+        ])
+            .then(axios.spread(
+                (clientData) => {
+                    if (clientData.status === 200) {
+                        clientData = clientData.data.clientData;
+                        setUserData(clientData, setClientData);
+                    } else {
+                        console.log('Oopps... something wrong, status code ' + clientData.status);
+                        return function cleanup() { }
+                    }
+                }))
+            .catch((err) => {
+                console.log('Oopps... something wrong');
+                console.log(err);
+                return function cleanup() { }
+            });
     }, []);
 
     useEffect(() => {

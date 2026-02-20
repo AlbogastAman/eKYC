@@ -38,12 +38,15 @@ exports.login = async (req, res) => {
 exports.getClientData = (req, res) => {
 
     const fields = ['name', 'address', 'dateOfBirth', 'idNumber', 'whoRegistered'];
-
+    console.log("req########", req)
     networkConnection
         .evaluateTransaction('getClientData', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fields || []])
         .then(result => {
             if (result) {
+                console.log("req######## result: ", result)
                 if (result.length > 0) {
+                    console.log("req######## result: >0 ")
+                    console.log("req######## result parsed: ", JSON.parse(Buffer.from(result.toString())))
                     return res.json({ clientData: JSON.parse(Buffer.from(result.toString())) });
                 }
                 return res.json({ clientData: result.toString() });
