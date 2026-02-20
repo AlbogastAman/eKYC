@@ -134,7 +134,7 @@ class eKYC extends Contract {
             throw new Error('Unauthorized: Caller mismatch');
         }
 
-        const existing = await ctx.stub.getState(clientData.userDid);
+        const existing = await ctx.stub.getState(clientData.did);
         if (existing && existing.length > 0) {
             throw new Error('Client already exists');
         }
@@ -147,7 +147,7 @@ class eKYC extends Contract {
 
         const anchor = {
             docType: 'credentialAnchor',
-            did: clientData.userDid,
+            did: clientData.did,
             hash: credentialHash, // Only the proof, no PII
             issuer: callerId,
             status: 'VALID',
@@ -155,11 +155,11 @@ class eKYC extends Contract {
         };
 
         // Store the anchor using the DID as the key
-        await ctx.stub.putState(clientData.userDid, Buffer.from(JSON.stringify(anchor)));
+        await ctx.stub.putState(clientData.did, Buffer.from(JSON.stringify(anchor)));
 
         // Maintain your composite keys so FIs can still see which clients they registered
-        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [clientData.userDid, callerId]);
-        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, clientData.userDid]);
+        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [clientData.did, callerId]);
+        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, clientData.did]);
 
         await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
         await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
@@ -170,11 +170,11 @@ class eKYC extends Contract {
         };
 
         // Store the non-pii using the DID as the key
-        await ctx.stub.putState(`data:${clientData.userDid}`, Buffer.from(JSON.stringify(client)));
+        await ctx.stub.putState(`data:${clientData.did}`, Buffer.from(JSON.stringify(client)));
 
         console.info('============= END : Anchor Credential ===========');
 
-        return clientData.userDid;
+        return clientData.did;
     }
 
     /**
