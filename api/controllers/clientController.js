@@ -83,6 +83,7 @@ exports.approve = async (req, res) => {
     networkConnection
         .submitTransaction('approve', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fiId])
         .then(async result => {
+            console.log("#Naingia hapa#####");
             if (result) {
                 await io.approveIdentityRequest(reqId);
                 return res.json({ message: `Financial Institution ${fiId} approved by ${req.cookies.ledgerId}` });
@@ -90,6 +91,7 @@ exports.approve = async (req, res) => {
             return res.status(500).json({ error: 'Something went wrong' });
         })
         .catch((err) => {
+            console.log("#Naingia hapa error#####", err);
             return res.status(500).json({ error: `Something went wrong\n ${err}` });
         });
 };
