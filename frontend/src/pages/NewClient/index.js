@@ -16,6 +16,8 @@ const Login = () => {
     const [submitDisabled, setSubmitDisabled] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [newClientMsg, setNewClientMsg] = useState('');
+    const [showQR, setShowQR] = useState(true);
+    const [qrData, setQrData] = useState(null);
 
     function handleName(e) {
         setClientData({ ...clientData, name: e.target.value });
@@ -74,6 +76,27 @@ const Login = () => {
     );
 
     useEffect(() => {
+        setQrData({
+            "message": "Verifiable Credential issued. Please save your salts securely.",
+            "txId": "did:fabric:ekyc:JAN1",
+            "did": "did:fabric:ekyc:JAN1",
+            "vc": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImRpZDpmYWJyaWM6b3JnMSNrZXktMSJ9.eyJpYXQiOjE3NzE2Mjc3MzAsInN1YiI6ImRpZDpmYWJyaWM6ZWt5YzpKQU4xIiwiaXNzIjoiZGlkOmZhYnJpYzpvcmcxIiwidmMiOnsiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIklkZW50aXR5Q3JlZGVudGlhbCJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJpZCI6ImRpZDpmYWJyaWM6ZWt5YzpKQU4xIiwibmFtZSI6IkpBTkUgRE9FIiwiYWRkcmVzcyI6IkJPWCAxMjM0IiwiemtQcm9vZnMiOnsiZGF0ZU9mQmlydGhIYXNoIjoiMjE3MTY0NjA5NzIzNjEyNDIxMjAwNzQyODk3NTkwNDMzNzM4MjMxODE4NDQ3OTQzNjk1ODMxNjgxNzM5MTczOTUwODgyOTk2MjU4MDUiLCJpZE51bWJlckhhc2giOiIxNjYxNzA1NjIwODI5NzU3NjUyNzEwMDYwNDg5MTM0NDU1NjcyNjI4OTg4NjQ3MDk0MDUwMDU0NjE4MTc4MTgzMzMzOTQ2MjYzNTE1MyIsImNvdW50cnlIYXNoIjoiMjA4MjI5NDMyMjA4NzUyMDQ3MjE3NzIzODU2MDQyMzIxOTg5NTU0NjcyMjIwMDI3MDE5OTg1MzM5Mzc5OTM2NjkwMDY5Nzk3MjMzNjYifX19fQ.TgqryQyBwZUAowqPvAT7Ek57ejkq7ySdQFQL1xotPhTGKWMzPXqEotSi95qvxJlinxG3ndJB3GuoNVENRYuSQw",
+            "salts": {
+                "idNumber": "d8544d0f8c7d8d4779bd297ca9ea62c0",
+                "dateOfBirth": "d96ca53e7e480b1248c87ea91056c853",
+                "country": "5f665680ddb5e57ab75d66c2c9152c4c"
+            },
+            "rawClaims": {
+                "name": "JANE DOE",
+                "dateOfBirth": "2000-06-20",
+                "address": "BOX 1234",
+                "country": "834",
+                "idNumber": "JA1234"
+            }
+        })
+    }, [])
+
+    useEffect(() => {
         validateForm();
     }, [validateForm]);
 
@@ -86,6 +109,16 @@ const Login = () => {
                         console.log(res);
                         if (res.status === 200) {
                             setNewClientMsg(res.data.message);
+
+                            // 👇 Data you want inside QR
+                            const payload = {
+                                message: res.data.message,
+                                login: clientData.login,
+                                did: res.data.ledgerId || null
+                            };
+
+                            setQrData(payload);
+                            setShowQR(true);
                         } else {
                             console.log('Oopps... something wrong, status code ' + res.status);
                             return function cleanup() { }
@@ -237,6 +270,41 @@ const Login = () => {
                                     <Text>{newClientMsg}</Text>
                                 </Box>
                             }
+                            {showQR && (
+                                <Box
+                                    style={{
+                                        position: 'fixed',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        backgroundColor: 'rgba(0,0,0,0.6)',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        zIndex: 9999
+                                    }}
+                                >
+                                    <Card p={4} width={[1, 1 / 2]} textAlign="center">
+                                        <Heading as="h3" mb={3}>Client Created Successfully</Heading>
+
+                                        {qrData && (
+                                            <QRCodeCanvas
+                                                value={JSON.stringify(qrData)}
+                                                size={220}
+                                            />
+                                        )}
+
+                                        <Text mt={3}>
+                                            Scan this QR to retrieve client information
+                                        </Text>
+
+                                        <Button mt={3} onClick={() => setShowQR(false)}>
+                                            Close
+                                        </Button>
+                                    </Card>
+                                </Box>
+                            )}
                         </Flex>
                     </Card>
                 </Form>
