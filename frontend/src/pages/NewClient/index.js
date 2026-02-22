@@ -1,9 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Flex, Box, Card, Heading, Text, Form, Field, Button, Loader } from 'rimble-ui';
-
+import { QRCodeCanvas } from 'qrcode.react';
 import qs from 'qs';
-
 import api from '../../service/api';
 
 const Login = () => {
