@@ -36,7 +36,11 @@ const Client = () => {
         try {
             axios.all([
                 api.get('/client/getClientData'),
-                api.get('/client/getClientRequests'),
+                api.get('/client/getClientRequests', {
+                    params: {
+                        status: 'N'
+                    }
+                }),
                 api.get('/client/getApprovedFis')
             ])
                 .then(axios.spread(
@@ -49,7 +53,7 @@ const Client = () => {
                             approvedFis = approvedFis.data.approvedFis;
                             setApprovedFiList(approvedFis);
                         } else {
-                            console.log('Oopps... something wrong, status code ',clientData.status,requestsData.status,approvedFis.status);
+                            console.log('Oopps... something wrong, status code ', clientData.status, requestsData.status, approvedFis.status);
                             return function cleanup() { }
                         }
                     }))

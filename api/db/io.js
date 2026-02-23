@@ -57,9 +57,11 @@ exports.fiApprovalRequest = async function (fi, client) {
 };
 
 // Get requests for a specific client
-exports.getRequestsByClient = async function (clientDid) {
+exports.getRequestsByClient = async function (clientDid, status = null) {
     try {
-        const requests = await FIRequest.find({ client: clientDid });
+        let query = { client: clientDid };
+        query = status ? { ...query, 'approved': status.toUpperCase() } : query;
+        const requests = await FIRequest.find(query);
         console.log(`Found ${requests.length} requests for: ${clientDid}`);
         return requests;
     } catch (err) {
