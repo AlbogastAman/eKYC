@@ -18,6 +18,11 @@ const Login = () => {
     const [showQR, setShowQR] = useState(false);
     const [qrData, setQrData] = useState(null);
 
+    function resetInputs() {
+        setShowQR(false);
+        setClientData({});
+    };
+
     function handleName(e) {
         setClientData({ ...clientData, name: e.target.value });
     };
@@ -269,7 +274,7 @@ const Login = () => {
                                             Present this QR to the Client,the client must use the eKYC app to store VC generated.
                                         </Text>
 
-                                        <Button mt={3} onClick={() => setShowQR(false)}>
+                                        <Button mt={3} onClick={() => resetInputs()}>
                                             Close
                                         </Button>
                                     </Card>

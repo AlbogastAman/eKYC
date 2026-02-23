@@ -22,7 +22,7 @@ const Fi = () => {
     const [fiData, setFiData] = useState([]);
 
     function handleChooseClient(e) {
-        setClientId(e.target.value.toUpperCase());
+        setClientId(e.target.value);
     };
 
     const handleClientFields = useCallback((e) => {
@@ -169,8 +169,8 @@ const Fi = () => {
                                     <Text mb={2} fontWeight={600} fontSize={'14px'}>What data do you want?</Text>
                                     <Form.Check label="Name" value="name" onChange={handleClientFields} />
                                     <Form.Check label="Address" value="address" onChange={handleClientFields} />
-                                    <Form.Check label="Date of Birth" value="dateOfBirth" onChange={handleClientFields} />
-                                    <Form.Check label="Id Number" value="idNumber" onChange={handleClientFields} />
+                                    {/* <Form.Check label="Date of Birth" value="dateOfBirth" onChange={handleClientFields} />
+                                    <Form.Check label="Id Number" value="idNumber" onChange={handleClientFields} /> */}
                                 </Box>
                             </Box>
                         </Flex>
