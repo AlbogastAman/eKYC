@@ -10,16 +10,16 @@ class ApproveWorkload extends WorkloadModuleBase {
         const index = this.txIndex % 10000;
         const did = `did:fabric:user${index}`;
 
-        await this.sutAdapter.sendRequests({
-            contractId: 'ekyc',
-            contractFunction: 'approve',
-            invokerIdentity: 'org1user1',   // must match whoRegistered
-            contractArguments: [
-                did,
-                'User1@org2.example.com'   // FI being approved
-            ],
-            readOnly: false
-        });
+            await this.sutAdapter.sendRequests({
+                contractId: 'eKYC',
+                contractFunction: 'approve',
+                invokerIdentity: 'org1user1',   // must match whoRegistered
+                contractArguments: [
+                    did,
+                    'FI1'   // FI being approved
+                ],
+                readOnly: false
+            });
     }
 }
 

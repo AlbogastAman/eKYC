@@ -15,7 +15,7 @@ class RegisterFIWorkload extends WorkloadModuleBase {
         });
 
         const request = {
-            contractId: 'ekyc',
+            contractId: 'eKYC',
             contractFunction: 'registerFI',
             invokerIdentity: 'org1admin',
             contractArguments: [did, jwk],

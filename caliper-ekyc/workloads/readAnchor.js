@@ -9,7 +9,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
         const did = `did:fabric:user${this.txIndex % 1000}`;
 
         const request = {
-            contractId: 'ekyc',
+            contractId: 'eKYC',
             contractFunction: 'readAnchor',
             invokerIdentity: 'org2user1',
             contractArguments: [did],

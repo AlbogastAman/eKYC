@@ -9,7 +9,7 @@ channels:
   - channelName: mychannel
     # the chaincodeIDs of all the fabric chaincodes in caliper-benchmarks
     contracts:
-      - id: ekyc
+      - id: eKYC
         version: "1.0"
         language: node
         contractID: eKYC

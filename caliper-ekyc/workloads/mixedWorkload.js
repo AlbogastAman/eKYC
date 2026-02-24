@@ -28,7 +28,7 @@ class MixedWorkload extends WorkloadModuleBase {
             if (readType < 0.5) {
 
                 await this.sutAdapter.sendRequests({
-                    contractId: 'ekyc',
+                    contractId: 'eKYC',
                     contractFunction: 'readAnchor',
                     invokerIdentity: identity.invoker,
                     contractArguments: [did],
@@ -40,7 +40,7 @@ class MixedWorkload extends WorkloadModuleBase {
             else {
 
                 await this.sutAdapter.sendRequests({
-                    contractId: 'ekyc',
+                    contractId: 'eKYC',
                     contractFunction: 'getClientData',
                     invokerIdentity: identity.invoker,
                     contractArguments: [
@@ -68,7 +68,7 @@ class MixedWorkload extends WorkloadModuleBase {
                 .digest('hex');
 
             await this.sutAdapter.sendRequests({
-                contractId: 'ekyc',
+                contractId: 'eKYC',
                 contractFunction: 'anchorCredential',
                 invokerIdentity: identity.invoker,
                 contractArguments: [

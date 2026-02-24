@@ -23,7 +23,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
             .digest('hex');
 
         const request = {
-            contractId: 'ekyc',
+            contractId: 'eKYC',
             contractFunction: 'anchorCredential',
             invokerIdentity: 'org1user1',  // maps to User1 cert
             contractArguments: [

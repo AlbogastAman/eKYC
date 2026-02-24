@@ -9,7 +9,7 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         const did = `did:fabric:user${this.txIndex % 500}`;
 
         const request = {
-            contractId: 'ekyc',
+            contractId: 'eKYC',
             contractFunction: 'getClientData',
             invokerIdentity: 'org2user1',
             contractArguments: [
