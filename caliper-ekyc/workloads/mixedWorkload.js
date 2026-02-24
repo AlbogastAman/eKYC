@@ -13,8 +13,8 @@ class MixedWorkload extends WorkloadModuleBase {
 
         // Rotate identities across workers
         const identities = [
-            { invoker: 'org1user1', ledgerUser: 'User1@org1.example.com' },
-            { invoker: 'org2user1', ledgerUser: 'User1@org2.example.com' }
+            { invoker: 'User1', ledgerUser: 'User1@org1.example.com' },
+            { invoker: 'User1', ledgerUser: 'User1@org2.example.com' }
         ];
 
         const identity = identities[this.workerIndex % identities.length];
@@ -35,7 +35,7 @@ class MixedWorkload extends WorkloadModuleBase {
                     readOnly: true
                 });
 
-            } 
+            }
             // 50% getClientData
             else {
 

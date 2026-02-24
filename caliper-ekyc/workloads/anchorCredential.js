@@ -25,7 +25,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         const request = {
             contractId: 'eKYC',
             contractFunction: 'anchorCredential',
-            invokerIdentity: 'org1user1',  // maps to User1 cert
+            invokerIdentity: 'User1',  // maps to User1 cert
             contractArguments: [
                 JSON.stringify(client),
                 hash
