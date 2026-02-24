@@ -82,44 +82,6 @@ class eKYC extends Contract {
     }
 
     /**
-     *
-     * @param {Context} ctx
-     * @param {object} clientData
-     * @dev create a new client
-     * @returns {string} new client ID
-     */
-    async createClient(ctx, clientData) {
-        console.info('============= START : Create client ===========');
-
-        clientData = JSON.parse(clientData);
-        const callerId = this.getCallerId(ctx);
-
-        if (clientData.whoRegistered.ledgerUser !== callerId) {
-            return null;
-        }
-
-        const client = {
-            docType: 'client',
-            ...clientData
-        };
-
-        const newId = 'CLIENT' + this.nextClientId;
-        this.nextClientId++;
-
-        await ctx.stub.putState(newId, Buffer.from(JSON.stringify(client)));
-
-        // Include who registered the client in the list of FI approved
-        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [newId, callerId]);
-        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, newId]);
-        await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
-        await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
-
-        console.info('============= END : Create client ===========');
-
-        return newId;
-    }
-
-    /**
      * @param {Context} ctx
      * @param {object} clientData
      * @param {string} credentialHash - The SHA256 hash of the VC

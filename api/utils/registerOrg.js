@@ -4,6 +4,9 @@ const { Wallets } = require('fabric-network');
 const crypto = require('node:crypto');
 const networkConnection = require('./networkConnection');
 
+/*
+* Essential for Organization PK storage on a ledger
+*/
 async function main() {
     // Expected usage: node registerOrg.js <orgName> <adminName> <orgNum>
     const orgName = process.argv[2];
@@ -64,7 +67,7 @@ async function main() {
         const response = await networkConnection.submitTransaction(
             'registerFI',
             orgNum,     // 1 for Org1, 2 for Org2
-            adminName,    // wallet user
+            adminName,  // wallet user
             [fiDid, publicKeyJwk]
         );
 

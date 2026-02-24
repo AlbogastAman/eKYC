@@ -1,0 +1,130 @@
+test:
+  name: eKYC-Benchmark
+  description: Comprehensive performance and scalability evaluation of eKYC smart contract
+
+  workers:
+    type: local
+    number: 20
+
+  options:
+    test:
+      # Fail round if success rate drops below 95%
+      transactionFailureThreshold: 5
+    monitoring:
+      interval: 1
+
+  rounds:
+    # ---------------------------------------------------
+    # Phase 0 – Dataset Preload (10k Anchors)
+    # ---------------------------------------------------
+    - label: preload-dataset
+      description: Populate ledger with 10k anchored credentials
+      txNumber: 10000
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workloads/anchorCredential.js
+
+    # ---------------------------------------------------
+    # Phase 1 – Warmup (Stabilize Network)
+    # ---------------------------------------------------
+    - label: warmup
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workloads/anchorCredential.js
+
+    # ---------------------------------------------------
+    # Phase 2 – Pure Write Performance (Anchor Only)
+    # ---------------------------------------------------
+    - label: anchor-write-200tps
+      txDuration: 120
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workloads/anchorCredential.js
+
+    # ---------------------------------------------------
+    # Phase 3 – Composite Write Performance (Approve)
+    # ---------------------------------------------------
+    - label: approve-write-200tps
+      txDuration: 120
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 200
+      workload:
+        module: workloads/approve.js
+
+    # ---------------------------------------------------
+    # Phase 4 – Read Performance (Anchor Retrieval)
+    # ---------------------------------------------------
+    - label: read-anchor-400tps
+      txDuration: 120
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 400
+      workload:
+        module: workloads/readAnchor.js
+
+    # ---------------------------------------------------
+    # Phase 5 – Relation Query Scalability
+    # ---------------------------------------------------
+    - label: relation-query-400tps
+      txDuration: 120
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 400
+      workload:
+        module: workloads/getRelationByFi.js
+
+    # ---------------------------------------------------
+    # Phase 6 – Realistic Production Mix
+    # ---------------------------------------------------
+    - label: mixed-production-250tps
+      txDuration: 180
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 250
+      workload:
+        module: workloads/mixedWorkload.js
+
+    # ---------------------------------------------------
+    # Phase 7 – Progressive Stress Ramp
+    # ---------------------------------------------------
+    - label: stress-300
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 300
+      workload:
+        module: workloads/mixedWorkload.js
+
+    - label: stress-400
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 400
+      workload:
+        module: workloads/mixedWorkload.js
+
+    - label: stress-500
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 500
+      workload:
+        module: workloads/mixedWorkload.js

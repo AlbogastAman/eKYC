@@ -1,0 +1,54 @@
+name: Fabric-eKYC-Network
+version: "2.0.0"
+
+caliper:
+  blockchain: fabric
+
+channels:
+  # channelName of mychannel matches the name of the channel created by test network
+  - channelName: mychannel
+    # the chaincodeIDs of all the fabric chaincodes in caliper-benchmarks
+    contracts:
+      - id: eKYC
+        version: "1.0"
+        language: node
+        contractID: eKYC
+
+organizations:
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: org1user1
+          clientPrivateKey:
+            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/*_sk
+          clientSignedCert:
+            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem
+
+        - name: org1admin
+          clientPrivateKey:
+            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/*_sk
+          clientSignedCert:
+            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem
+
+    connectionProfile:
+      path: ../test-network/organizations/peerOrganizations/org1.example.com/connection-org1.yaml
+      discover: true
+
+  - mspid: Org2MSP
+    identities:
+      certificates:
+        - name: org2user1
+          clientPrivateKey:
+            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/*_sk
+          clientSignedCert:
+            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts/cert.pem
+
+        - name: org2admin
+          clientPrivateKey:
+            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/*_sk
+          clientSignedCert:
+            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/cert.pem
+
+    connectionProfile:
+      path: ../test-network/organizations/peerOrganizations/org2.example.com/connection-org2.yaml
+      discover: true
