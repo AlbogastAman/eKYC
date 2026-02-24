@@ -20,13 +20,13 @@ organizations:
       certificates:
         - name: org1user1
           clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/*_sk
+            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/14268015440398f14d8902893a6fe66b8c947af5edd75de6e1041e45638a022c_sk
           clientSignedCert:
             path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem
 
         - name: org1admin
           clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/*_sk
+            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/9500b721c17bf6c3f231e824059e943b483a6af5327b91a33271e779ac1246dc_sk
           clientSignedCert:
             path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem
 
@@ -39,13 +39,13 @@ organizations:
       certificates:
         - name: org2user1
           clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/*_sk
+            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/b36592e9f9be5d96dd2f1cb6927f24505058cc0e890a054398a88e98ef09b3c8_sk
           clientSignedCert:
             path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts/cert.pem
 
         - name: org2admin
           clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/*_sk
+            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/335b0e0b8fefd6d086292a1d69d1768dfcb14efbe50402be41d2faaac958ade2_sk
           clientSignedCert:
             path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/cert.pem
 
