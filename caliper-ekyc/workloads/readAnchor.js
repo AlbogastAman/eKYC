@@ -11,7 +11,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
         const request = {
             contractId: 'eKYC',
             contractFunction: 'readAnchor',
-            invokerIdentity: 'User1',
+            invokerIdentity: 'admin',
             contractArguments: [did],
             readOnly: true
         };

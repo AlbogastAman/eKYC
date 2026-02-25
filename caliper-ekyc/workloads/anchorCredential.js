@@ -8,6 +8,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
     constructor() {
         super();
         this.txIndex = 0;
+        this.invoker = 'admin'; // Must match certificate CN exactly
     }
 
     async submitTransaction() {
@@ -18,7 +19,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         const client = {
             did: did,
             whoRegistered: {
-                ledgerUser: "FI1"   // MUST match cert CN
+                ledgerUser: 'FI1'   // MUST match cert CN (FI1)
             }
         };
 
@@ -30,7 +31,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         const request = {
             contractId: 'eKYC',
             contractFunction: 'anchorCredential',
-            invokerIdentity: 'User1',  // maps to User1 cert
+            invokerIdentity: this.invoker,  // MUST match network config identity
             contractArguments: [
                 JSON.stringify(client),
                 hash
