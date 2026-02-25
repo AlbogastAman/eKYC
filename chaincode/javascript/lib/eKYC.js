@@ -1,7 +1,7 @@
 const { Contract } = require('fabric-contract-api');
 const ClientIdentity = require('fabric-shim').ClientIdentity;
 
-const initialClientData = require('../data/initialClientData.json');
+//const initialClientData = require('../data/initialClientData.json');
 const initialFIData = require('../data/initialFIData.json');
 
 class eKYC extends Contract {
@@ -19,24 +19,25 @@ class eKYC extends Contract {
      */
     async initLedger(ctx) {
         console.info('============= START : Initialize Ledger ===========');
-        const clients = initialClientData;
+       // const clients = initialClientData;
         const fis = initialFIData;
 
-        for (const client of clients) {
-            const newClientId = 'CLIENT' + this.nextClientId;
-            const whoRegistered = client.whoRegistered.ledgerUser;
+        //To be added by fi using a frontend app
+        // for (const client of clients) {
+        //     const newClientId = 'CLIENT' + this.nextClientId;
+        //     const whoRegistered = client.whoRegistered.ledgerUser;
 
-            client.docType = 'client';
-            await ctx.stub.putState(newClientId, Buffer.from(JSON.stringify(client)));
-            console.info('Added <--> ', client);
-            this.nextClientId++;
+        //     client.docType = 'client';
+        //     await ctx.stub.putState(newClientId, Buffer.from(JSON.stringify(client)));
+        //     console.info('Added <--> ', client);
+        //     this.nextClientId++;
 
-            // Include who registered the client in the list of FI approved
-            const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [newClientId, whoRegistered]);
-            const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [whoRegistered, newClientId]);
-            await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
-            await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
-        }
+        //     // Include who registered the client in the list of FI approved
+        //     const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [newClientId, whoRegistered]);
+        //     const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [whoRegistered, newClientId]);
+        //     await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
+        //     await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
+        // }
 
         for (const fi of fis) {
             fi.docType = 'fi';
@@ -90,7 +91,7 @@ class eKYC extends Contract {
         console.info('============= START : Anchor Credential ===========');
         clientData = JSON.parse(clientData);
         const callerId = this.getCallerId(ctx);
-        
+
         if (clientData.whoRegistered.ledgerUser !== callerId) {
             throw new Error('Unauthorized: Caller mismatch');
         }
