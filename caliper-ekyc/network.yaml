@@ -24,7 +24,7 @@ organizations:
           clientSignedCert:
             path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem
 
-        - name: Admin
+        - name: admin
           clientPrivateKey:
             path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/9500b721c17bf6c3f231e824059e943b483a6af5327b91a33271e779ac1246dc_sk
           clientSignedCert:
@@ -43,7 +43,7 @@ organizations:
           clientSignedCert:
             path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts/cert.pem
 
-        - name: Admin
+        - name: admin
           clientPrivateKey:
             path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/335b0e0b8fefd6d086292a1d69d1768dfcb14efbe50402be41d2faaac958ade2_sk
           clientSignedCert:
