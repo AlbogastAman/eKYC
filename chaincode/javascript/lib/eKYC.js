@@ -88,9 +88,11 @@ class eKYC extends Contract {
      */
     async anchorCredential(ctx, clientData, credentialHash) {
         console.info('============= START : Anchor Credential ===========');
-
+        console.log("######ctx ", ctx)
         clientData = JSON.parse(clientData);
+        console.log("######clientData ", clientData)
         const callerId = this.getCallerId(ctx);
+        console.log("######callerId ", callerId)
 
         if (clientData.whoRegistered.ledgerUser !== callerId) {
             throw new Error('Unauthorized: Caller mismatch');

@@ -12,34 +12,11 @@ const snarkjs = require('snarkjs');
 const fs = require('fs');
 const path = require('path');
 
-// exports.createClient = (req, res) => {
-
-//     const orgNum = req.orgNum;
-//     const ledgerUser = req.ledgerUser;
-
-//     const { login, password, name, dateOfBirth, address, idNumber } = req.body;
-//     const clientData = JSON.stringify({ name, dateOfBirth, address, idNumber, whoRegistered: { orgNum, ledgerUser } });
-
-//     networkConnection
-//         .submitTransaction('createClient', orgNum, ledgerUser, [clientData])
-//         .then(async result => {
-//             if (result) {
-//                 result = result.toString();
-//                 if (result.length > 0) {
-//                     await io.clientCreate(login, password, result, JSON.stringify({ orgNum, ledgerUser }));
-//                     return res.json({ message: `New client ${result} created`, ledgerId: result });
-//                 }
-//             }
-//             return res.status(500).json({ error: 'Something went wrong' });
-//         })
-//         .catch((err) => {
-//             return res.status(500).json({ error: `Something went wrong\n ${err}` });
-//         });
-// };
-
 exports.createClient = async (req, res) => {
     const { login, password, name, dateOfBirth, address, country, idNumber } = req.body;
     const { orgNum, ledgerUser } = req;
+    console.log("####orgNum ", orgNum);
+    console.log("####ledgerUser ", ledgerUser);
     try {
         const userDID = `did:fabric:ekyc:${login}`;
         //All Non-PII to be shared on ledger
