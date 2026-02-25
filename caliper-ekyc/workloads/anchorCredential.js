@@ -4,17 +4,26 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 const crypto = require('crypto');
 
 class AnchorCredentialWorkload extends WorkloadModuleBase {
-
     constructor() {
         super();
         this.txIndex = 0;
+    }
+
+    /**
+     * Initialize worker-specific context to prevent collisions
+     */
+    async initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig);
         this.invoker = 'FI1';
+        // Ensure each worker starts with a unique offset
+        this.workerOffset = workerIndex * 1000000; 
     }
 
     async submitTransaction() {
-
-        const index = this.txIndex++;
-        const did = `did:fabric:user${index}`;
+        this.txIndex++;
+        // Combine worker ID and index for a globally unique DID
+        const globalIndex = this.workerOffset + this.txIndex;
+        const did = `did:fabric:user${globalIndex}`;
 
         const client = {
             did: did,
@@ -26,7 +35,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
 
         const hash = crypto
             .createHash('sha256')
-            .update(`credential-${index}`)
+            .update(`credential-${globalIndex}-${Date.now()}`)
             .digest('hex');
 
         const request = {
@@ -37,10 +46,12 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
                 JSON.stringify(client),
                 hash
             ],
-            readOnly: false
+            // Optimization: If using Fabric Gateway, you can set a timeout 
+            // to prevent requests from hanging during stress rounds
+            timeout: 30 
         };
 
-        await this.sutAdapter.sendRequests(request);
+        return this.sutAdapter.sendRequests(request);
     }
 }
 
