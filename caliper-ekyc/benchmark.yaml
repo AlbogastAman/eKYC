@@ -4,7 +4,7 @@ test:
 
   workers:
     type: local
-    number: 20
+    number: 5
 
   options:
     test:
