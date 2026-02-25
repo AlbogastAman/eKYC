@@ -18,7 +18,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         const client = {
             did: did,
             whoRegistered: {
-                ledgerUser: "User1"   // MUST match cert CN
+                ledgerUser: "FI1"   // MUST match cert CN
             }
         };
 
