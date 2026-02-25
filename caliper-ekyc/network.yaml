@@ -18,17 +18,11 @@ organizations:
   - mspid: Org1MSP
     identities:
       certificates:
-        - name: User1
+        - name: FI1
           clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/14268015440398f14d8902893a6fe66b8c947af5edd75de6e1041e45638a022c_sk
+            path: ../api/wallet/FI1-key.pem
           clientSignedCert:
-            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem
-
-        - name: admin
-          clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/9500b721c17bf6c3f231e824059e943b483a6af5327b91a33271e779ac1246dc_sk
-          clientSignedCert:
-            path: ../test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem
+            path: ../api/wallet/FI1-cert.pem
 
     connectionProfile:
       path: ../test-network/organizations/peerOrganizations/org1.example.com/connection-org1.yaml
@@ -37,17 +31,11 @@ organizations:
   - mspid: Org2MSP
     identities:
       certificates:
-        - name: User1
+        - name: FI2
           clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/b36592e9f9be5d96dd2f1cb6927f24505058cc0e890a054398a88e98ef09b3c8_sk
+            path: ../api/wallet/FI2-key.pem
           clientSignedCert:
-            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/signcerts/cert.pem
-
-        - name: admin
-          clientPrivateKey:
-            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/335b0e0b8fefd6d086292a1d69d1768dfcb14efbe50402be41d2faaac958ade2_sk
-          clientSignedCert:
-            path: ../test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/cert.pem
+            path: ../api/wallet/FI2-cert.pem
 
     connectionProfile:
       path: ../test-network/organizations/peerOrganizations/org2.example.com/connection-org2.yaml

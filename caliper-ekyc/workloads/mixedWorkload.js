@@ -13,8 +13,8 @@ class MixedWorkload extends WorkloadModuleBase {
 
         // Rotate identities across workers
         const identities = [
-            { invoker: 'admin', ledgerUser: 'FI1' },
-            { invoker: 'admin', ledgerUser: 'FI2' }
+            { invoker: 'FI1', ledgerUser: 'FI1' },
+            { invoker: 'FI2', ledgerUser: 'FI2' }
         ];
 
         const identity = identities[this.workerIndex % identities.length];

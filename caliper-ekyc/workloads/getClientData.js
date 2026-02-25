@@ -11,7 +11,7 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         const request = {
             contractId: 'eKYC',
             contractFunction: 'getClientData',
-            invokerIdentity: 'admin',
+            invokerIdentity: 'FI1',
             contractArguments: [
                 did,
                 "did"

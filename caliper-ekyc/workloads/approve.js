@@ -13,7 +13,7 @@ class ApproveWorkload extends WorkloadModuleBase {
         await this.sutAdapter.sendRequests({
             contractId: 'eKYC',
             contractFunction: 'approve',
-            invokerIdentity: 'admin',   // must match whoRegistered
+            invokerIdentity: 'FI1',
             contractArguments: [
                 did,
                 'FI2'   // FI being approved

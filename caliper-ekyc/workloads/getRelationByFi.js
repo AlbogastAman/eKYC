@@ -9,7 +9,7 @@ class RelationByFiWorkload extends WorkloadModuleBase {
         await this.sutAdapter.sendRequests({
             contractId: 'eKYC',
             contractFunction: 'getRelationByFi',
-            invokerIdentity: 'admin',
+            invokerIdentity: 'F11',
             contractArguments: [],
             readOnly: true
         });

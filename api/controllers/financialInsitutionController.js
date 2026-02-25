@@ -15,8 +15,6 @@ const path = require('path');
 exports.createClient = async (req, res) => {
     const { login, password, name, dateOfBirth, address, country, idNumber } = req.body;
     const { orgNum, ledgerUser } = req;
-    console.log("####orgNum ", orgNum);
-    console.log("####ledgerUser ", ledgerUser);
     try {
         const userDID = `did:fabric:ekyc:${login}`;
         //All Non-PII to be shared on ledger
