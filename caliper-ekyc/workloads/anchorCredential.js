@@ -5,9 +5,14 @@ const crypto = require('crypto');
 
 class AnchorCredentialWorkload extends WorkloadModuleBase {
 
+    constructor() {
+        super();
+        this.txIndex = 0;
+    }
+
     async submitTransaction() {
 
-        const index = this.txIndex;
+        const index = this.txIndex++;
         const did = `did:fabric:user${index}`;
 
         const client = {
