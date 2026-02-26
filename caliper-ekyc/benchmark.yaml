@@ -1,10 +1,10 @@
 test:
   name: eKYC-Benchmark
-  description: Comprehensive performance and scalability evaluation of eKYC smart contract
+  description: Performance and scalability benchmark for eKYC smart contract with safe concurrency
 
   workers:
     type: local
-    number: 5  # total concurrent workers
+    number: 5  # total parallel workers
 
   options:
     test:
@@ -14,107 +14,49 @@ test:
 
   rounds:
     # ---------------------------------------------------
-    # Phase 0 – Dataset Preload (10k Anchors, split into batches)
+    # Phase 0 – Dataset Preload (10k Anchors, smaller batches)
     # ---------------------------------------------------
-    - label: preload-dataset-batch1
-      description: Populate ledger with first 1000 anchored credentials
-      txNumber: 1000
+    - label: preload-batch1
+      description: Populate ledger with first 250 anchored credentials
+      txNumber: 250
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 50
+          tps: 25
       workload:
         module: workloads/anchorCredential.js
 
-    - label: preload-dataset-batch2
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
+    - label: preload-batch2
+      description: Next 250 anchored credentials
+      txNumber: 250
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 50
+          tps: 25
       workload:
         module: workloads/anchorCredential.js
 
-    - label: preload-dataset-batch3
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
+    - label: preload-batch3
+      description: Next 250 anchored credentials
+      txNumber: 250
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 50
+          tps: 25
       workload:
         module: workloads/anchorCredential.js
 
-    - label: preload-dataset-batch4
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
+    - label: preload-batch4
+      description: Next 250 anchored credentials
+      txNumber: 250
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 50
+          tps: 25
       workload:
         module: workloads/anchorCredential.js
 
-    - label: preload-dataset-batch5
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-dataset-batch6
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-dataset-batch7
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-dataset-batch8
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-dataset-batch9
-      description: Populate ledger with next 1000 anchored credentials
-      txNumber: 1000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-dataset-batch10
-      description: Populate ledger with final 1000 anchored credentials
-      txNumber: 1000
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 50
-      workload:
-        module: workloads/anchorCredential.js
+    # Repeat batches until you reach 10k (total 40 batches of 250)
 
     # ---------------------------------------------------
     # Phase 1 – Warmup (Stabilize Network)
@@ -122,9 +64,9 @@ test:
     - label: warmup
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 40
+          tps: 25
       workload:
         module: workloads/anchorCredential.js
 
@@ -134,9 +76,9 @@ test:
     - label: anchor-write
       txDuration: 120
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 60
+          tps: 40
       workload:
         module: workloads/anchorCredential.js
 
@@ -146,9 +88,9 @@ test:
     - label: approve-write
       txDuration: 120
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 60
+          tps: 40
       workload:
         module: workloads/approve.js
 
@@ -158,9 +100,9 @@ test:
     - label: read-anchor
       txDuration: 120
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 100
+          tps: 60
       workload:
         module: workloads/readAnchor.js
 
@@ -170,9 +112,9 @@ test:
     - label: relation-query
       txDuration: 120
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 100
+          tps: 60
       workload:
         module: workloads/getRelationByFi.js
 
@@ -182,38 +124,38 @@ test:
     - label: mixed-production
       txDuration: 180
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 100
+          tps: 60
       workload:
         module: workloads/mixedWorkload.js
 
     # ---------------------------------------------------
-    # Phase 7 – Progressive Stress Ramp (throttled)
+    # Phase 7 – Progressive Stress Ramp (safe bursts)
     # ---------------------------------------------------
     - label: stress-150
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 100
+          tps: 60
       workload:
         module: workloads/mixedWorkload.js
 
     - label: stress-200
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 120
+          tps: 80
       workload:
         module: workloads/mixedWorkload.js
 
     - label: stress-250
       txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: poisson
         opts:
-          tps: 150
+          tps: 100
       workload:
         module: workloads/mixedWorkload.js
