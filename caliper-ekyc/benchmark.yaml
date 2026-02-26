@@ -14,15 +14,15 @@ test:
 
   rounds:
     # ---------------------------------------------------
-    # Phase 0 – Dataset Preload (10k Anchors, smaller batches)
+    # Phase 0 – Dataset Preload (10k Anchors, split into small batches)
     # ---------------------------------------------------
     - label: preload-batch1
       description: Populate ledger with first 250 anchored credentials
       txNumber: 250
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
-          tps: 25
+          tps: 20
       workload:
         module: workloads/anchorCredential.js
 
@@ -30,9 +30,9 @@ test:
       description: Next 250 anchored credentials
       txNumber: 250
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
-          tps: 25
+          tps: 20
       workload:
         module: workloads/anchorCredential.js
 
@@ -40,9 +40,9 @@ test:
       description: Next 250 anchored credentials
       txNumber: 250
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
-          tps: 25
+          tps: 20
       workload:
         module: workloads/anchorCredential.js
 
@@ -50,13 +50,13 @@ test:
       description: Next 250 anchored credentials
       txNumber: 250
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
-          tps: 25
+          tps: 20
       workload:
         module: workloads/anchorCredential.js
 
-    # Repeat batches until you reach 10k (total 40 batches of 250)
+    # Repeat batches until reaching total 10k (40 batches of 250)
 
     # ---------------------------------------------------
     # Phase 1 – Warmup (Stabilize Network)
@@ -64,9 +64,9 @@ test:
     - label: warmup
       txDuration: 60
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
-          tps: 25
+          tps: 20
       workload:
         module: workloads/anchorCredential.js
 
@@ -76,7 +76,7 @@ test:
     - label: anchor-write
       txDuration: 120
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 40
       workload:
@@ -88,7 +88,7 @@ test:
     - label: approve-write
       txDuration: 120
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 40
       workload:
@@ -100,7 +100,7 @@ test:
     - label: read-anchor
       txDuration: 120
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 60
       workload:
@@ -112,7 +112,7 @@ test:
     - label: relation-query
       txDuration: 120
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 60
       workload:
@@ -124,7 +124,7 @@ test:
     - label: mixed-production
       txDuration: 180
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 60
       workload:
@@ -136,7 +136,7 @@ test:
     - label: stress-150
       txDuration: 60
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 60
       workload:
@@ -145,7 +145,7 @@ test:
     - label: stress-200
       txDuration: 60
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 80
       workload:
@@ -154,7 +154,7 @@ test:
     - label: stress-250
       txDuration: 60
       rateControl:
-        type: poisson
+        type: fixed-rate
         opts:
           tps: 100
       workload:
