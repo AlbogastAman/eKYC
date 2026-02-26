@@ -6,26 +6,22 @@ const crypto = require('crypto');
 class AnchorCredentialWorkload extends WorkloadModuleBase {
     constructor() {
         super();
-        this.txIndex = 0;
+        // Create a unique prefix for this specific test execution
+        this.runID = Date.now().toString().slice(-6); 
     }
 
-    /**
-     * Initialize worker-specific context to prevent collisions
-     */
     async initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig);
         this.invoker = 'FI1';
-        // Ensure each worker starts with a unique offset
-        this.workerOffset = workerIndex * 1000000;
     }
 
     async submitTransaction() {
         this.txIndex++;
-        // Combine worker ID and index for a globally unique DID
-        // const globalIndex = this.workerOffset + this.txIndex;
-        // const did = `did:fabric:usl${globalIndex}`;
-        const uid = crypto.randomUUID();
-        const did = `did:fabric:usr${uid}`;
+        
+        // Format: usr_[Timestamp]_[Worker]_[Index]
+        // Example: did:fabric:usr_822341_0_15
+        const userIdentifier = `${this.runID}_${this.workerIndex}_${this.txIndex}`;
+        const did = `did:fabric:usr${userIdentifier}`;
 
         const client = {
             did: did,
@@ -35,22 +31,13 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
             }
         };
 
-        const hash = crypto
-            .createHash('sha256')
-            .update(`credential-${uid}`)
-            .digest('hex');
+        const hash = crypto.createHash('sha256').update(did).digest('hex');
 
         const request = {
             contractId: 'eKYC',
             contractFunction: 'anchorCredential',
             invokerIdentity: this.invoker,
-            contractArguments: [
-                JSON.stringify(client),
-                hash
-            ],
-            // Optimization: If using Fabric Gateway, you can set a timeout 
-            // to prevent requests from hanging during stress rounds
-            timeout: 30
+            contractArguments: [JSON.stringify(client), hash]
         };
 
         return this.sutAdapter.sendRequests(request);

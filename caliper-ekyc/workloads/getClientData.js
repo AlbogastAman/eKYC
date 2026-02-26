@@ -3,25 +3,35 @@
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 class GetClientDataWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
+    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
+        
+        // Match the seed and pool size from the YAML
+        this.runID = this.roundArguments.seed;
+        this.totalAssets = this.roundArguments.totalArguments.totalAssets || 10000;
+        this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
+        
         this.txIndex = 0;
-        this.totalPreloaded = 10000;
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {
-        // Expand range to hit the full 10k dataset
-        const index = this.txIndex % this.totalPreloaded;
-        const did = `did:fabric:user${index}`;
         this.txIndex++;
 
-        // Simulate requesting different field sets (PII vs Metadata)
+        // 1. Target the preloaded data pool deterministically
+        const targetWorker = Math.floor(Math.random() * this.totalWorkers);
+        const targetIndex = Math.floor(Math.random() * this.assetsPerWorker) + 1;
+        
+        const did = `did:fabric:usr_${this.runID}_${targetWorker}_${targetIndex}`;
+
+        // 2. Simulate requesting different field sets (PII vs Metadata)
+        // Note: Ensure your chaincode's getClientData supports the "fields" argument string
         const fields = this.txIndex % 2 === 0 ? "did,whoRegistered" : "did,status";
 
         const request = {
             contractId: 'eKYC',
             contractFunction: 'getClientData',
-            invokerIdentity: 'FI1',
+            invokerIdentity: this.invoker,
             contractArguments: [did, fields],
             readOnly: true
         };

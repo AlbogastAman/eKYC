@@ -3,27 +3,28 @@
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 class RelationByFiWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
+    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
+        
         this.txIndex = 0;
+        // Rotating invokers ensures we test the index for multiple FIs
+        this.invokers = ['FI1', 'FI2']; 
     }
 
     async submitTransaction() {
         this.txIndex++;
 
-        // Rotate between identities to scan different parts of the fiId~clientId index
-        const invokers = ['FI1', 'FI2'];
-        const invoker = invokers[this.txIndex % invokers.length];
+        // Rotate identity based on transaction index
+        const currentInvoker = this.invokers[this.txIndex % this.invokers.length];
 
         const request = {
             contractId: 'eKYC',
             contractFunction: 'getRelationByFi',
-            invokerIdentity: invoker,
-            contractArguments: [], // Function takes no args, uses getCallerId internally
+            invokerIdentity: currentInvoker,
+            contractArguments: [], // Internal logic uses ClientID from the certificate
             readOnly: true
         };
 
-        // Return the promise to ensure Caliper measures the full iteration time
         return this.sutAdapter.sendRequests(request);
     }
 }

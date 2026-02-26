@@ -1,86 +1,36 @@
 test:
   name: eKYC-Benchmark
-  description: Performance and scalability benchmark for eKYC smart contract with safe concurrency
-
+  description: Full-lifecycle performance benchmark for eKYC smart contract
+  
   workers:
     type: local
-    number: 5  # total parallel workers
+    number: 5
 
   options:
     test:
-      transactionFailureThreshold: 5  # fail if <95% success
+      transactionFailureThreshold: 5
     monitoring:
+      type: ["docker"]
+      docker:
+        containers: ["all"]
       interval: 1
 
   rounds:
     # ---------------------------------------------------
-    # Phase 0 – Dataset Preload (10k Anchors, split into small batches)
+    # Phase 0 – Dataset Preload (Consolidated for sync)
     # ---------------------------------------------------
-    - label: preload-batch1
-      description: Populate ledger with first 250 anchored credentials
-      txNumber: 250
+    - label: preload-data
+      description: Populate ledger with 10k credentials at a safe pace
+      txNumber: 10000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 30
       workload:
         module: workloads/anchorCredential.js
-
-    - label: preload-batch2
-      description: Next 250 anchored credentials
-      txNumber: 250
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 20
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-batch3
-      description: Next 250 anchored credentials
-      txNumber: 250
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 20
-      workload:
-        module: workloads/anchorCredential.js
-
-    - label: preload-batch4
-      description: Next 250 anchored credentials
-      txNumber: 250
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 20
-      workload:
-        module: workloads/anchorCredential.js
-
-    # Repeat batches until reaching total 10k (40 batches of 250)
-
-    # ---------------------------------------------------
-    # Phase 1 – Warmup (Stabilize Network)
-    # ---------------------------------------------------
-    - label: warmup
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 20
-      workload:
-        module: workloads/anchorCredential.js
-
-    # ---------------------------------------------------
-    # Phase 2 – Pure Write Performance (Anchor Only)
-    # ---------------------------------------------------
-    - label: anchor-write
-      txDuration: 120
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 40
-      workload:
-        module: workloads/anchorCredential.js
+        arguments:
+          seed: "STRESS_FEB_26" # Shared seed across all rounds
+          totalAssets: 10000
 
     # ---------------------------------------------------
     # Phase 3 – Composite Write Performance (Approve)
@@ -93,6 +43,9 @@ test:
           tps: 40
       workload:
         module: workloads/approve.js
+        arguments:
+          seed: "STRESS_FEB_26"
+          totalAssets: 10000
 
     # ---------------------------------------------------
     # Phase 4 – Read Performance (Anchor Retrieval)
@@ -102,9 +55,12 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 60
+          tps: 150 # Reads are faster, let's test higher TPS
       workload:
         module: workloads/readAnchor.js
+        arguments:
+          seed: "STRESS_FEB_26"
+          totalAssets: 10000
 
     # ---------------------------------------------------
     # Phase 5 – Relation Query Scalability
@@ -117,45 +73,22 @@ test:
           tps: 60
       workload:
         module: workloads/getRelationByFi.js
+        arguments:
+          seed: "STRESS_FEB_26"
+          totalAssets: 10000
 
     # ---------------------------------------------------
-    # Phase 6 – Realistic Production Mix
+    # Phase 6 & 7 – Production Mix & Stress Ramp
     # ---------------------------------------------------
-    - label: mixed-production
+    - label: mixed-production-stress
       txDuration: 180
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 60
+          startingTps: 50
+          finishingTps: 200 # Automatically ramps up to find the breaking point
       workload:
         module: workloads/mixedWorkload.js
-
-    # ---------------------------------------------------
-    # Phase 7 – Progressive Stress Ramp (safe bursts)
-    # ---------------------------------------------------
-    - label: stress-150
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 60
-      workload:
-        module: workloads/mixedWorkload.js
-
-    - label: stress-200
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 80
-      workload:
-        module: workloads/mixedWorkload.js
-
-    - label: stress-250
-      txDuration: 60
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 100
-      workload:
-        module: workloads/mixedWorkload.js
+        arguments:
+          seed: "STRESS_FEB_26"
+          totalAssets: 10000

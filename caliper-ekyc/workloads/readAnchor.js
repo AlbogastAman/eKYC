@@ -6,26 +6,40 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
     constructor() {
         super();
         this.txIndex = 0;
-        this.totalPreloaded = 10000; // Match your Phase 0 dataset
+    }
+
+    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
+        
+        // Use the seed and asset count from the YAML configuration
+        this.runID = this.roundArguments.seed;
+        this.totalAssets = this.roundArguments.totalAssets || 10000;
+        
+        // Calculate the range each worker produced in the write round
+        this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {
-        // Use a modulo of the total preloaded set to ensure we are hitting valid keys
-        const index = this.txIndex % this.totalPreloaded;
-        const did = `did:fabric:user${index}`;
-
         this.txIndex++;
+
+        // 1. Pick a random worker from the original pool
+        const targetWorker = Math.floor(Math.random() * this.totalWorkers);
+        
+        // 2. Pick a random index within the range that worker created
+        const randomIndex = Math.floor(Math.random() * this.assetsPerWorker) + 1;
+        
+        // 3. Reconstruct the DID: did:fabric:usr_[seed]_[worker]_[index]
+        const did = `did:fabric:usr_${this.runID}_${targetWorker}_${randomIndex}`;
 
         const request = {
             contractId: 'eKYC',
             contractFunction: 'readAnchor',
-            invokerIdentity: 'FI1',
+            invokerIdentity: this.invoker,
             contractArguments: [did],
-            // Optimization: readOnly ensures this doesn't go to the Orderer
-            readOnly: true 
+            readOnly: true // This triggers 'evaluateTransaction' (Peer-only, no Orderer)
         };
 
-        // CRITICAL: Must return the promise for Caliper to record metrics accurately
         return this.sutAdapter.sendRequests(request);
     }
 }

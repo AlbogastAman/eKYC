@@ -4,41 +4,36 @@ const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 const crypto = require('crypto');
 
 class MixedWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
+    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
+        
+        // Match settings from anchorCredential.js and YAML
+        this.runID = this.roundArguments.seed;
+        this.totalPreloaded = this.roundArguments.totalAssets || 10000;
+        this.assetsPerWorker = Math.floor(this.totalPreloaded / this.totalWorkers);
+        
         this.txIndex = 0;
-        // Total records preloaded in Phase 0
-        this.totalPreloaded = 10000; 
-    }
-
-    async initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig);
-        // Start writes far beyond the preloaded range to avoid collisions
-        this.writeOffset = this.totalPreloaded + (workerIndex * 100000);
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {
         this.txIndex++;
         const random = Math.random();
 
-        const identities = [
-            { invoker: 'FI1', ledgerUser: 'FI1' },
-            { invoker: 'FI2', ledgerUser: 'FI2' }
-        ];
-        const identity = identities[this.workerIndex % identities.length];
-
         // --- 70% READ OPERATIONS ---
         if (random < 0.7) {
-            // Read from the PRELOADED pool only to ensure keys exist
-            const readIndex = Math.floor(Math.random() * this.totalPreloaded);
-            const readDid = `did:fabric:user${readIndex}`;
+            // Pick a random DID from the preloaded pool
+            const targetWorker = Math.floor(Math.random() * this.totalWorkers);
+            const targetIndex = Math.floor(Math.random() * this.assetsPerWorker) + 1;
+            
+            const readDid = `did:fabric:usr_${this.runID}_${targetWorker}_${targetIndex}`;
 
             const isAnchorRead = Math.random() < 0.5;
             
             return this.sutAdapter.sendRequests({
                 contractId: 'eKYC',
                 contractFunction: isAnchorRead ? 'readAnchor' : 'getClientData',
-                invokerIdentity: identity.invoker,
+                invokerIdentity: this.invoker,
                 contractArguments: isAnchorRead ? [readDid] : [readDid, "did,status"],
                 readOnly: true
             });
@@ -46,23 +41,20 @@ class MixedWorkload extends WorkloadModuleBase {
 
         // --- 30% WRITE OPERATIONS ---
         else {
-            // Use unique DIDs for writes to avoid MVCC conflicts
-            const globalWriteIndex = this.writeOffset + this.txIndex;
-            const writeDid = `did:fabric:user${globalWriteIndex}`;
+            // Create NEW unique DIDs (using a 'mixed' prefix to avoid collision with preload)
+            const writeDid = `did:fabric:usr_mixed_${this.runID}_${this.workerIndex}_${this.txIndex}`;
 
             const client = {
                 did: writeDid,
-                whoRegistered: { ledgerUser: identity.ledgerUser }
+                whoRegistered: { ledgerUser: 'FI1', orgNum: 1 }
             };
 
-            const hash = crypto.createHash('sha256')
-                .update(`credential-${globalWriteIndex}`)
-                .digest('hex');
+            const hash = crypto.createHash('sha256').update(writeDid).digest('hex');
 
             return this.sutAdapter.sendRequests({
                 contractId: 'eKYC',
                 contractFunction: 'anchorCredential',
-                invokerIdentity: identity.invoker,
+                invokerIdentity: this.invoker,
                 contractArguments: [JSON.stringify(client), hash],
                 readOnly: false
             });

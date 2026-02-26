@@ -3,35 +3,36 @@
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 class ApproveWorkload extends WorkloadModuleBase {
-    constructor() {
-        super();
-        this.txIndex = 0;
-        this.totalPreloaded = 10000;
-    }
-
-    async initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig);
+    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
+        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
-        // Split the 10k DIDs among the workers
-        // E.g., Worker 0 takes 0-1999, Worker 1 takes 2000-3999...
-        this.rangeSize = Math.floor(this.totalPreloaded / totalWorkers);
-        this.workerStart = workerIndex * this.rangeSize;
+        // Match the seed and pool size from the YAML
+        this.runID = this.roundArguments.seed;
+        this.totalAssets = this.roundArguments.totalAssets || 10000;
+        
+        // Calculate the range of assets this worker is responsible for
+        this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
+        
+        this.txIndex = 0;
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {
-        // Calculate an index that stays within this worker's assigned range
-        const localIndex = this.txIndex % this.rangeSize;
-        const globalIndex = this.workerStart + localIndex;
-        const did = `did:fabric:user${globalIndex}`;
-
         this.txIndex++;
+
+        // 1. Pick an index within the range this worker "owns" 
+        // Using modulo ensures we cycle through the same IDs if txNumber > assetsPerWorker
+        const localIndex = (this.txIndex % this.assetsPerWorker) + 1;
+        
+        // 2. Reconstruct the DID that was created in the preload phase
+        const did = `did:fabric:usr_${this.runID}_${this.workerIndex}_${localIndex}`;
 
         const request = {
             contractId: 'eKYC',
             contractFunction: 'approve',
-            invokerIdentity: 'FI1', // Must be the identity that registered the DID
-            contractArguments: [did, 'FI2'],
-            readOnly: false
+            invokerIdentity: this.invoker, 
+            contractArguments: [did, 'FI2'], // Approving FI2 to see FI1's anchor
+            readOnly: false // This is a ledger update
         };
 
         return this.sutAdapter.sendRequests(request);
