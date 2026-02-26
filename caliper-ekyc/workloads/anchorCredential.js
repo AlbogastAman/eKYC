@@ -23,7 +23,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         this.txIndex++;
         // Combine worker ID and index for a globally unique DID
         const globalIndex = this.workerOffset + this.txIndex;
-        const did = `did:fabric:usr${globalIndex}`;
+        const did = `did:fabric:usl${globalIndex}`;
 
         const client = {
             did: did,
