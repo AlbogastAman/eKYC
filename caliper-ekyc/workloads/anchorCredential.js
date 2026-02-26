@@ -16,14 +16,15 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, numberofRequests, adapterConfig, contractConfig);
         this.invoker = 'FI1';
         // Ensure each worker starts with a unique offset
-        this.workerOffset = workerIndex * 1000000; 
+        this.workerOffset = workerIndex * 1000000;
     }
 
     async submitTransaction() {
         this.txIndex++;
         // Combine worker ID and index for a globally unique DID
-        const globalIndex = this.workerOffset + this.txIndex;
-        const did = `did:fabric:usl${globalIndex}`;
+        // const globalIndex = this.workerOffset + this.txIndex;
+        // const did = `did:fabric:usl${globalIndex}`;
+        const did = `did:fabric:usr${crypto.randomUUID()}`;
 
         const client = {
             did: did,
@@ -48,7 +49,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
             ],
             // Optimization: If using Fabric Gateway, you can set a timeout 
             // to prevent requests from hanging during stress rounds
-            timeout: 30 
+            timeout: 30
         };
 
         return this.sutAdapter.sendRequests(request);
