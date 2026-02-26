@@ -24,7 +24,8 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
         // Combine worker ID and index for a globally unique DID
         // const globalIndex = this.workerOffset + this.txIndex;
         // const did = `did:fabric:usl${globalIndex}`;
-        const did = `did:fabric:usr${crypto.randomUUID()}`;
+        const uid = crypto.randomUUID();
+        const did = `did:fabric:usr${uid}`;
 
         const client = {
             did: did,
@@ -36,7 +37,7 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
 
         const hash = crypto
             .createHash('sha256')
-            .update(`credential-${globalIndex}-${Date.now()}`)
+            .update(`credential-${uid}`)
             .digest('hex');
 
         const request = {
