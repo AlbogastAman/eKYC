@@ -1,94 +1,69 @@
 test:
-  name: eKYC-Benchmark
-  description: Full-lifecycle performance benchmark for eKYC smart contract
+  name: eKYC-Enhanced-Small-VM
+  description: Optimized for 2CPU/4GB RAM environment
   
   workers:
     type: local
-    number: 5
+    number: 3 # Optimal for 2 CPUs
 
   options:
     test:
-      transactionFailureThreshold: 5
+      transactionFailureThreshold: 5 # Tighter tolerance for better data
     monitoring:
       type: ["docker"]
       docker:
-        containers: ["all"]
-      interval: 1
+        containers: ["peer0.org1.example.com", "couchdb0"] # Monitor only key bottlenecks
+      interval: 2 # Reduced frequency to save CPU cycles
 
   rounds:
-    # ---------------------------------------------------
-    # Phase 0 – Dataset Preload (Consolidated for sync)
-    # ---------------------------------------------------
-    - label: preload-data
-      description: Populate ledger with 10k credentials at a safe pace
-      txNumber: 10000
+    # --- Step 1: Managed Preload (Part A) ---
+    - label: preload-part-1
+      txNumber: 5000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 30
+          tps: 20
       workload:
         module: workloads/createClient.js
-        arguments:
-          seed: "STRESS_FEB_26" # Shared seed across all rounds
-          totalAssets: 10000
+        arguments: { seed: "FINAL_01", totalAssets: 10000 }
 
-    # ---------------------------------------------------
-    # Phase 3 – Composite Write Performance (Approve)
-    # ---------------------------------------------------
-    - label: approve-write
-      txDuration: 120
+    # --- Step 2: Intermediate Indexing Breath ---
+    - label: mid-cooldown
+      txDuration: 45 # Longer pause for small RAM
+      rateControl: { type: fixed-rate, opts: { tps: 1 } }
+      workload: { module: workloads/readAnchor.js, arguments: { seed: "FINAL_01", totalAssets: 10000 } }
+
+    # --- Step 3: Managed Preload (Part B) ---
+    - label: preload-part-2
+      txNumber: 5000
       rateControl:
         type: fixed-rate
         opts:
-          tps: 40
+          tps: 20
       workload:
-        module: workloads/approve.js
-        arguments:
-          seed: "STRESS_FEB_26"
-          totalAssets: 10000
+        module: workloads/createClient.js
+        arguments: { seed: "FINAL_01", totalAssets: 10000 }
 
-    # ---------------------------------------------------
-    # Phase 4 – Read Performance (Anchor Retrieval)
-    # ---------------------------------------------------
-    - label: read-anchor
-      txDuration: 120
+    # --- Step 4: Warm Read Stress ---
+    - label: read-performance
+      txDuration: 60
       rateControl:
-        type: fixed-rate
+        type: linear-rate
         opts:
-          tps: 150 # Reads are faster, let's test higher TPS
+          startingTps: 20
+          finishingTps: 100 # Find where reads saturate the 2 CPUs
       workload:
         module: workloads/readAnchor.js
-        arguments:
-          seed: "STRESS_FEB_26"
-          totalAssets: 10000
+        arguments: { seed: "FINAL_01", totalAssets: 10000 }
 
-    # ---------------------------------------------------
-    # Phase 5 – Relation Query Scalability
-    # ---------------------------------------------------
-    - label: relation-query
-      txDuration: 120
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 60
-      workload:
-        module: workloads/getRelationByFi.js
-        arguments:
-          seed: "STRESS_FEB_26"
-          totalAssets: 10000
-
-    # ---------------------------------------------------
-    # Phase 6 & 7 – Production Mix & Stress Ramp
-    # ---------------------------------------------------
-    - label: mixed-production-stress
+    # --- Step 5: Realistic Mixed Stress ---
+    - label: mixed-stress-ramp
       txDuration: 180
       rateControl:
         type: linear-rate
         opts:
-          startingTps: 50
-          finishingTps: 200 # Automatically ramps up to find the breaking point
+          startingTps: 10
+          finishingTps: 50 # 50 TPS is very realistic for this hardware
       workload:
         module: workloads/mixedWorkload.js
-        arguments:
-          seed: "STRESS_FEB_26"
-          totalAssets: 10000
+        arguments: { seed: "FINAL_01", totalAssets: 10000 }
