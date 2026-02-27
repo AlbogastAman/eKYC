@@ -6,7 +6,7 @@ const io = require('../db/io');
 const networkConnection = require('../utils/networkConnection');
 const { createVC, getIssuerKeys, createFabricResolver } = require('../utils/vcService');
 const crypto = require('node:crypto');
-const { verifyJWT, decodeJWT } = require('did-jwt');
+const { verifyJWT } = require('did-jwt');
 const snarkjs = require('snarkjs');
 
 const fs = require('fs');
@@ -54,7 +54,7 @@ exports.createClient = async (req, res) => {
 
         // 5. Submit to Ledger
         const ledgerResponse = await networkConnection.submitTransaction(
-            'anchorCredential',
+            'createClient',
             orgNum,
             ledgerUser,
             [clientData, credentialCommitment]
@@ -155,8 +155,6 @@ exports.verifyUserVC = async (req, res) => {
         let response = await io.fiApprovalRequest(
             ledgerUser, userDid
         );
-
-        console.log("###linkFItoClient ##", response)
 
         res.status(200).json({
             message: "Verification Successful",

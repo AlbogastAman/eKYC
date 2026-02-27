@@ -19,7 +19,7 @@ class eKYC extends Contract {
      */
     async initLedger(ctx) {
         console.info('============= START : Initialize Ledger ===========');
-       // const clients = initialClientData;
+        // const clients = initialClientData;
         const fis = initialFIData;
 
         //To be added by fi using a frontend app
@@ -87,7 +87,7 @@ class eKYC extends Contract {
      * @param {object} clientData
      * @param {string} credentialHash - The SHA256 hash of the VC
      */
-    async anchorCredential(ctx, clientData, credentialHash) {
+    async createClient(ctx, clientData, credentialHash) {
         console.info('============= START : Anchor Credential ===========');
         clientData = JSON.parse(clientData);
         const callerId = this.getCallerId(ctx);

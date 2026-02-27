@@ -3,7 +3,7 @@
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 const crypto = require('crypto');
 
-class AnchorCredentialWorkload extends WorkloadModuleBase {
+class CreateClientWorkload extends WorkloadModuleBase {
     constructor() {
         super();
         // 1. Initialize txIndex here to prevent "NaN"
@@ -12,19 +12,19 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-        
+
         // 2. Use the Seed from YAML if available, otherwise fallback to a timestamp
-        this.runID = (this.roundArguments && this.roundArguments.seed) 
-                        ? this.roundArguments.seed 
-                        : Date.now().toString().slice(-6);
-                        
+        this.runID = (this.roundArguments && this.roundArguments.seed)
+            ? this.roundArguments.seed
+            : Date.now().toString().slice(-6);
+
         this.invoker = 'FI1';
     }
 
     async submitTransaction() {
         // 3. Increment counter
         this.txIndex++;
-        
+
         // 4. Build the DID. Note: workerIndex is provided by the Base class
         // format: did:fabric:usr_Seed_Worker_Index
         const did = `did:fabric:usr_${this.runID}_${this.workerIndex}_${this.txIndex}`;
@@ -51,4 +51,4 @@ class AnchorCredentialWorkload extends WorkloadModuleBase {
     }
 }
 
-module.exports.createWorkloadModule = () => new AnchorCredentialWorkload();
+module.exports.createWorkloadModule = () => new CreateClientWorkload();

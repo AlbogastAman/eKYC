@@ -27,7 +27,7 @@ test:
         opts:
           tps: 30
       workload:
-        module: workloads/anchorCredential.js
+        module: workloads/createClient.js
         arguments:
           seed: "STRESS_FEB_26" # Shared seed across all rounds
           totalAssets: 10000

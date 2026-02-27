@@ -7,7 +7,7 @@ class MixedWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
-        // Match settings from anchorCredential.js and YAML
+        // Match settings from createClient.js and YAML
         this.runID = this.roundArguments.seed;
         this.totalPreloaded = this.roundArguments.totalAssets || 10000;
         this.assetsPerWorker = Math.floor(this.totalPreloaded / this.totalWorkers);
@@ -53,7 +53,7 @@ class MixedWorkload extends WorkloadModuleBase {
 
             return this.sutAdapter.sendRequests({
                 contractId: 'eKYC',
-                contractFunction: 'anchorCredential',
+                contractFunction: 'createClient',
                 invokerIdentity: this.invoker,
                 contractArguments: [JSON.stringify(client), hash],
                 readOnly: false
