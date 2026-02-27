@@ -41,7 +41,7 @@ class CreateClientWorkload extends WorkloadModuleBase {
 
         const request = {
             contractId: 'eKYC',
-            contractFunction: 'anchorCredential',
+            contractFunction: 'createClient',
             invokerIdentity: this.invoker,
             // Ensure your chaincode expects a JSON String or an Object
             contractArguments: [JSON.stringify(client), hash]
