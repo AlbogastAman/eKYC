@@ -12,36 +12,40 @@ class MixedWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
-        this.runID = this.roundArguments.seed;
+        this.runID = this.roundArguments.seed || 'STRESS';
         this.totalPreloaded = this.roundArguments.totalAssets || 10000;
-        this.assetsPerWorker = Math.floor(this.totalPreloaded / this.totalWorkers);
         this.invoker = 'FI1';
+        
+        // Ensure writes start AFTER the preloaded data
+        // Each worker gets a "Mixed" lane starting at 10,001
+        this.writeOffset = this.totalPreloaded; 
+        this.txsPerWorker = 2000; // Buffer space for new writes per worker
     }
 
     async submitTransaction() {
         this.txIndex++;
         const random = Math.random();
 
-        // --- 95% READ OPERATIONS (Light Load) ---
+        // --- 95% READS: Targeting the 10k preloaded assets ---
         if (random < 0.95) {
-            const targetWorker = Math.floor(Math.random() * this.totalWorkers);
-            const targetIndex = Math.floor(Math.random() * this.assetsPerWorker) + 1;
-            const readDid = `did:fabric:usr_${this.runID}_${targetWorker}_${targetIndex}`;
+            const randomTarget = Math.floor(Math.random() * this.totalPreloaded) + 1;
+            const readDid = `did:fabric:usr_${this.runID}_${randomTarget}`;
 
-            const isAnchorRead = Math.random() < 0.5;
-            
             return this.sutAdapter.sendRequests({
                 contractId: 'eKYC',
-                contractFunction: isAnchorRead ? 'readAnchor' : 'getClientData',
+                contractFunction: 'readAnchor',
                 invokerIdentity: this.invoker,
-                contractArguments: isAnchorRead ? [readDid] : [readDid, "did,status"],
+                contractArguments: [readDid],
                 readOnly: true
             });
         } 
 
-        // --- 5% WRITE OPERATIONS (Heavy Load) ---
+        // --- 5% WRITES: Creating brand-new unique entries ---
         else {
-            const writeDid = `did:fabric:usr_mixed_${this.runID}_${this.workerIndex}_${this.txIndex}`;
+            // Formula: PreloadTotal + (MyLane) + MyProgress
+            const uniqueWriteIndex = this.writeOffset + (this.workerIndex * this.txsPerWorker) + this.txIndex;
+            const writeDid = `did:fabric:usr_mixed_${this.runID}_${uniqueWriteIndex}`;
+            
             const client = {
                 did: writeDid,
                 whoRegistered: { ledgerUser: this.invoker, orgNum: 1 }
@@ -51,16 +55,15 @@ class MixedWorkload extends WorkloadModuleBase {
             try {
                 return await this.sutAdapter.sendRequests({
                     contractId: 'eKYC',
-                    contractFunction: 'createClient', // Adjusted to match your error log
+                    contractFunction: 'createClient',
                     invokerIdentity: this.invoker,
                     contractArguments: [JSON.stringify(client), hash],
                     readOnly: false
                 });
             } catch (error) {
-                // BACKOFF: If a write fails, wait 500ms before allowing this worker to continue
-                // This helps clear the Peer/CouchDB backlog
+                // Defensive Backoff for 2 CPU limit
                 await new Promise(resolve => setTimeout(resolve, 500));
-                throw error; 
+                throw error;
             }
         }
     }

@@ -6,48 +6,45 @@ const crypto = require('crypto');
 class CreateClientWorkload extends WorkloadModuleBase {
     constructor() {
         super();
-        // 1. Initialize txIndex here to prevent "NaN"
         this.txIndex = 0;
     }
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
 
-        // 2. Use the Seed from YAML if available, otherwise fallback to a timestamp
-        this.runID = (this.roundArguments && this.roundArguments.seed)
-            ? this.roundArguments.seed
-            : Date.now().toString().slice(-6);
-
+        this.runID = this.roundArguments.seed || 'STRESS';
+        this.offset = this.roundArguments.offset || 0;
+        
+        // Split the 5000 transactions of the round among the 3 workers
+        // 5000 / 3 = 1666 transactions per worker
+        this.txsPerWorker = Math.floor(this.totalRequests / this.totalWorkers);
         this.invoker = 'FI1';
     }
 
     async submitTransaction() {
-        // 3. Increment counter
         this.txIndex++;
 
-        // 4. Build the DID. Note: workerIndex is provided by the Base class
-        // format: did:fabric:usr_Seed_Worker_Index
-        const did = `did:fabric:usr_${this.runID}_${this.workerIndex}_${this.txIndex}`;
+        // Each worker stays in their own "lane"
+        // Worker 0: 0 + (0*1666) + 1 = 1
+        // Worker 1: 0 + (1*1666) + 1 = 1667
+        // Worker 2: 0 + (2*1666) + 1 = 3333
+        const globalUniqueIndex = this.offset + (this.workerIndex * this.txsPerWorker) + this.txIndex;
+        
+        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
         const client = {
             did: did,
-            whoRegistered: {
-                ledgerUser: 'FI1',
-                orgNum: 1
-            }
+            whoRegistered: { ledgerUser: 'FI1', orgNum: 1 }
         };
 
         const hash = crypto.createHash('sha256').update(did).digest('hex');
 
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId: 'eKYC',
             contractFunction: 'createClient',
             invokerIdentity: this.invoker,
-            // Ensure your chaincode expects a JSON String or an Object
             contractArguments: [JSON.stringify(client), hash]
-        };
-
-        return this.sutAdapter.sendRequests(request);
+        });
     }
 }
 

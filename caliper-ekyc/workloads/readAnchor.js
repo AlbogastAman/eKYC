@@ -11,36 +11,28 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
-        // Use the seed and asset count from the YAML configuration
-        this.runID = this.roundArguments.seed;
+        this.runID = this.roundArguments.seed || 'STRESS';
         this.totalAssets = this.roundArguments.totalAssets || 10000;
-        
-        // Calculate the range each worker produced in the write round
-        this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
         this.invoker = 'FI1';
     }
 
     async submitTransaction() {
         this.txIndex++;
 
-        // 1. Pick a random worker from the original pool
-        const targetWorker = Math.floor(Math.random() * this.totalWorkers);
+        // 1. Pick ANY random number between 1 and the total preloaded count
+        // This ensures all workers spread their load across the entire 10k database
+        const globalRandomIndex = Math.floor(Math.random() * this.totalAssets) + 1;
         
-        // 2. Pick a random index within the range that worker created
-        const randomIndex = Math.floor(Math.random() * this.assetsPerWorker) + 1;
-        
-        // 3. Reconstruct the DID: did:fabric:usr_[seed]_[worker]_[index]
-        const did = `did:fabric:usr_${this.runID}_${targetWorker}_${randomIndex}`;
+        // 2. Reconstruct the global DID format
+        const did = `did:fabric:usr_${this.runID}_${globalRandomIndex}`;
 
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId: 'eKYC',
             contractFunction: 'readAnchor',
             invokerIdentity: this.invoker,
             contractArguments: [did],
-            readOnly: true // This triggers 'evaluateTransaction' (Peer-only, no Orderer)
-        };
-
-        return this.sutAdapter.sendRequests(request);
+            readOnly: true // Crucial: Bypasses Orderer to save CPU/Network bandwidth
+        });
     }
 }
 

@@ -6,11 +6,10 @@ class ApproveWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
-        // Match the seed and pool size from the YAML
-        this.runID = this.roundArguments.seed;
+        this.runID = this.roundArguments.seed || 'STRESS';
         this.totalAssets = this.roundArguments.totalAssets || 10000;
         
-        // Calculate the range of assets this worker is responsible for
+        // Divide the 10,000 preloaded assets among the 3 workers
         this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
         
         this.txIndex = 0;
@@ -20,19 +19,18 @@ class ApproveWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
 
-        // 1. Pick an index within the range this worker "owns" 
-        // Using modulo ensures we cycle through the same IDs if txNumber > assetsPerWorker
-        const localIndex = (this.txIndex % this.assetsPerWorker) + 1;
+        // Stay in your "lane" to avoid worker-on-worker collisions
+        // This math ensures Worker 0 only approves IDs 1-3333, Worker 1 approves 3334-6666, etc.
+        const globalUniqueIndex = (this.workerIndex * this.assetsPerWorker) + (this.txIndex % this.assetsPerWorker) + 1;
         
-        // 2. Reconstruct the DID that was created in the preload phase
-        const did = `did:fabric:usr_${this.runID}_${this.workerIndex}_${localIndex}`;
+        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
         const request = {
             contractId: 'eKYC',
             contractFunction: 'approve',
             invokerIdentity: this.invoker, 
-            contractArguments: [did, 'FI2'], // Approving FI2 to see FI1's anchor
-            readOnly: false // This is a ledger update
+            contractArguments: [did, 'FI2'], 
+            readOnly: false // Update operation
         };
 
         return this.sutAdapter.sendRequests(request);

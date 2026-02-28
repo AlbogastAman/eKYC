@@ -1,5 +1,5 @@
 test:
-  name: eKYC-Enhanced-Small-VM
+  name: eKYC-Hyperledger-fabric-benchmark
   description: Optimized for 2CPU/4GB RAM environment
   
   workers:

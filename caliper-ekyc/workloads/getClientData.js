@@ -7,9 +7,8 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
         // Match the seed and pool size from the YAML
-        this.runID = this.roundArguments.seed;
-        this.totalAssets = this.roundArguments.totalArguments.totalAssets || 10000;
-        this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
+        this.runID = this.roundArguments.seed || 'STRESS';
+        this.totalAssets = this.roundArguments.totalAssets || 10000;
         
         this.txIndex = 0;
         this.invoker = 'FI1';
@@ -18,14 +17,13 @@ class GetClientDataWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
 
-        // 1. Target the preloaded data pool deterministically
-        const targetWorker = Math.floor(Math.random() * this.totalWorkers);
-        const targetIndex = Math.floor(Math.random() * this.assetsPerWorker) + 1;
+        // 1. Pick ANY number from the total pool created by all workers
+        const globalRandomIndex = Math.floor(Math.random() * this.totalAssets) + 1;
         
-        const did = `did:fabric:usr_${this.runID}_${targetWorker}_${targetIndex}`;
+        // 2. Reconstruct the global DID format: did:fabric:usr_[Seed]_[Number]
+        const did = `did:fabric:usr_${this.runID}_${globalRandomIndex}`;
 
-        // 2. Simulate requesting different field sets (PII vs Metadata)
-        // Note: Ensure your chaincode's getClientData supports the "fields" argument string
+        // 3. Alternate field requests to test CouchDB projection performance
         const fields = this.txIndex % 2 === 0 ? "did,whoRegistered" : "did,status";
 
         const request = {
