@@ -58,7 +58,6 @@ test:
 
     # --- Step 5: Realistic Mixed Stress ---
     - label: mixed-stress-ramp
-      txNumber: 2000 # Total number of transactions
       txDuration: 180
       rateControl:
         type: linear-rate
