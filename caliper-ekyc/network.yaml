@@ -35,9 +35,9 @@ organizations:
       certificates:
         - name: FI2
           clientPrivateKey:
-            path: ../api/wallet/FI2-key.pem
+            path: /home/albogast_aman/fabric-samples/eKYC/api/wallet/FI2-key.pem
           clientSignedCert:
-            path: ../api/wallet/FI2-cert.pem
+            path: /home/albogast_aman/fabric-samples/eKYC/api/wallet/FI2-cert.pem
 
     connectionProfile:
       path: ../test-network/organizations/peerOrganizations/org2.example.com/connection-org2.yaml
