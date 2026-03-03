@@ -31,7 +31,7 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         
         // 3. Reconstruct the Global DID: usr_[Seed]_[LaneOffset + Index]
         const globalUniqueIndex = this.offset + (randomWorkerLane * this.laneSize) + randomIndexInLane;
-        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
+        const did = `did:fabric:usr1_${this.runID}_${globalUniqueIndex}`;
 
         // 4. Test "Field Projection" (Selective Read)
         // This is a great test for your 2 CPU VM to see if filtering fields saves CPU time

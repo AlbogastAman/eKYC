@@ -38,11 +38,11 @@ test:
       txNumber: 5000
       rateControl:
         type: fixed-rate
-        opts:
-          tps: 20
+        opts: { tps: 20 }
       workload:
         module: workloads/createClient.js
-        arguments: { seed: "FINAL_01", totalAssets: 10000 }
+        # ADD OFFSET: This tells the script to start IDs at 5001+
+        arguments: { seed: "FINAL_01", totalAssets: 10000, offset: 5000 }
 
     # --- Step 4: Warm Read Stress ---
     - label: read-performance
@@ -58,6 +58,7 @@ test:
 
     # --- Step 5: Realistic Mixed Stress ---
     - label: mixed-stress-ramp
+      txNumber: 2000 # Total number of transactions
       txDuration: 180
       rateControl:
         type: linear-rate
