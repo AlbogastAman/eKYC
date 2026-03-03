@@ -18,7 +18,7 @@ class CreateClientWorkload extends WorkloadModuleBase {
         // SAFETY: If Caliper doesn't pass the total, we assume a safe buffer.
         // We use a large multiplier (100,000) to ensure workers never cross "lanes".
         this.laneSize = 100000; 
-        this.invoker = 'FI1';
+        this.invoker = 'FI2';
         
         console.log(`Worker ${this.workerIndex} initialized. Lane starts at: ${this.offset + (this.workerIndex * this.laneSize)}`);
     }
@@ -37,7 +37,7 @@ class CreateClientWorkload extends WorkloadModuleBase {
 
         const client = {
             did: did,
-            whoRegistered: { ledgerUser: 'FI1', orgNum: 1 }
+            whoRegistered: { ledgerUser: 'FI2', orgNum: 1 }
         };
 
         const hash = crypto.createHash('sha256').update(did).digest('hex');
