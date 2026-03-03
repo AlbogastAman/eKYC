@@ -17,7 +17,7 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         this.assetsCreatedPerWorker = Math.floor(totalInRound / this.totalWorkers);
         
         this.txIndex = 0;
-        this.invoker = 'FI1';
+        this.invoker = 'FI2';
     }
 
     async submitTransaction() {

@@ -1,12 +1,12 @@
 test:
-  name: eKYC-Hyperledger-fabric-benchmark
-  description: Optimized for 2CPU/4GB RAM environment
+  name: eKYC-Multi-Org-Handoff-Benchmark
+  description: Testing FI1 Creation, FI1 Approval, and FI2 Authorized Access
 
   workers:
     type: local
-    number: 3 # Optimal for 2 CPUs
+    number: 3 # Maximizes 2 CPUs without overloading the RAM
 
-  options:
+    options:
     test:
       transactionFailureThreshold: 5 # Tighter tolerance for better data
     monitoring:
@@ -16,59 +16,48 @@ test:
       interval: 2 # Reduced frequency to save CPU cycles
 
   rounds:
-    # --- Step 1: Managed Preload (Part A) ---
-    - label: preload-part-1
-      txNumber: 5000
+    # --- STEP 1: FI1 Identity Creation ---
+    - label: "Step-1-FI1-Creation"
+      txNumber: 1500
       rateControl:
         type: fixed-rate
-        opts:
-          tps: 10 # Half the speed, double the stability
+        opts: { tps: 10 } # Stable baseline for 4GB RAM
       workload:
         module: workloads/createClient.js
-        arguments: { seed: "FINAL_01", totalAssets: 10000 }
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
 
-    # --- Step 2: Intermediate Indexing Breath ---
-    - label: mid-cooldown
-      txDuration: 60
+    # --- STEP 2: Database Settling (Cooldown) ---
+    - label: "Cooldown-Sync"
+      txDuration: 30
       rateControl: { type: fixed-rate, opts: { tps: 1 } }
       workload:
         module: workloads/readAnchor.js
-        arguments:
-          seed: "FINAL_01"
-          # FIX: Only look for what we just created in Part 1
-          totalAssets: 5000
-          offset: 0
-          
-    # --- Step 3: Managed Preload (Part B) ---
-    - label: preload-part-2
-      txNumber: 5000
+        arguments: { seed: "FINAL_01", totalAssets: 1500 }
+
+    # --- STEP 3: FI1 Grants Access to FI2 ---
+    - label: "Step-2-FI1-Approve-FI2"
+      txNumber: 1000
       rateControl:
         type: fixed-rate
-        opts:
-          tps: 10
+        opts: { tps: 8 } # Read-Modify-Write is heavier on CPU
       workload:
-        module: workloads/createClient.js
-        arguments: { seed: "FINAL_01", totalAssets: 10000, offset: 5000 }
-    # --- Step 4: Warm Read Stress ---
-    - label: read-performance
-      txDuration: 60
-      rateControl:
-        type: linear-rate
-        opts:
-          startingTps: 20
-          finishingTps: 100 # Find where reads saturate the 2 CPUs
-      workload:
-        module: workloads/readAnchor.js
-        arguments: { seed: "FINAL_01", totalAssets: 10000 }
+        module: workloads/approve.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
 
-    # --- Step 5: Realistic Mixed Stress ---
-    - label: mixed-stress-ramp
-      txDuration: 180
+    # --- STEP 4: FI2 Authorized Data Retrieval ---
+    - label: "Step-3-FI2-Get-Data"
+      txDuration: 120
       rateControl:
         type: linear-rate
         opts:
           startingTps: 10
-          finishingTps: 50 # 50 TPS is very realistic for this hardware
+          finishingTps: 50 # Stress test the read-only capability
       workload:
-        module: workloads/mixedWorkload.js
-        arguments: { seed: "FINAL_01", totalAssets: 10000 }
+        module: workloads/getClientData.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500

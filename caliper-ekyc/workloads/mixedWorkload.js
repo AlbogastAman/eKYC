@@ -11,17 +11,17 @@ class MixedWorkload extends WorkloadModuleBase {
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-        
+
         this.runID = this.roundArguments.seed || 'STRESS';
         this.laneSize = 100000; // Match the lane size from earlier rounds
-        
+
         // Total assets per worker from the PRELOAD phase (e.g., 10k total / 3 workers)
         const preloadTotal = this.roundArguments.totalAssets || 10000;
         this.assetsPreloadedPerWorker = Math.floor(preloadTotal / this.totalWorkers);
-        
+
         // We start mixed writes at a very high offset to avoid any overlap
-        this.mixedWriteOffset = 500000; 
-        
+        this.mixedWriteOffset = 500000;
+
         this.invoker = 'FI1';
     }
 
@@ -33,7 +33,7 @@ class MixedWorkload extends WorkloadModuleBase {
         if (!isWrite) {
             const randomWorkerLane = Math.floor(Math.random() * this.totalWorkers);
             const randomIndexInLane = Math.floor(Math.random() * this.assetsPreloadedPerWorker) + 1;
-            
+
             // Reconstruct the DID from the preload lanes
             const globalReadIndex = (randomWorkerLane * this.laneSize) + randomIndexInLane;
             const readDid = `did:fabric:usr_${this.runID}_${globalReadIndex}`;
@@ -45,14 +45,14 @@ class MixedWorkload extends WorkloadModuleBase {
                 contractArguments: [readDid],
                 readOnly: true
             });
-        } 
+        }
 
         // --- 5% WRITES: Creating new entries in a separate "Mixed" lane ---
         else {
             // Formula: MixedOffset + (WorkerLane) + Progress
             const uniqueWriteIndex = this.mixedWriteOffset + (this.workerIndex * this.laneSize) + this.txIndex;
             const writeDid = `did:fabric:usr_mixed_${this.runID}_${uniqueWriteIndex}`;
-            
+
             const client = {
                 did: writeDid,
                 whoRegistered: { ledgerUser: this.invoker, orgNum: 1 }
