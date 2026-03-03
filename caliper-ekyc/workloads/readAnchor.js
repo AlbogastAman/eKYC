@@ -20,7 +20,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
         const totalPreloadedInRound = 5000;
         this.assetsCreatedPerWorker = Math.floor(totalPreloadedInRound / this.totalWorkers);
 
-        this.invoker = 'FI2';
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {

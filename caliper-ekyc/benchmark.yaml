@@ -16,37 +16,37 @@ test:
       interval: 2 # Reduced frequency to save CPU cycles
 
   rounds:
-    # # --- STEP 1: FI1 Identity Creation ---
-    # - label: "Step-1-FI1-Creation"
-    #   txNumber: 1500
-    #   rateControl:
-    #     type: fixed-rate
-    #     opts: { tps: 10 } # Stable baseline for 4GB RAM
-    #   workload:
-    #     module: workloads/createClient.js
-    #     arguments:
-    #       seed: "FINAL_01"
-    #       totalAssets: 1500
+    # --- STEP 1: FI1 Identity Creation ---
+    - label: "Step-1-FI1-Creation"
+      txNumber: 1500
+      rateControl:
+        type: fixed-rate
+        opts: { tps: 10 } # Stable baseline for 4GB RAM
+      workload:
+        module: workloads/createClient.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
 
-    # # --- STEP 2: Database Settling (Cooldown) ---
-    # - label: "Cooldown-Sync"
-    #   txDuration: 30
-    #   rateControl: { type: fixed-rate, opts: { tps: 1 } }
-    #   workload:
-    #     module: workloads/readAnchor.js
-    #     arguments: { seed: "FINAL_01", totalAssets: 1500 }
+    # --- STEP 2: Database Settling (Cooldown) ---
+    - label: "Cooldown-Sync"
+      txDuration: 30
+      rateControl: { type: fixed-rate, opts: { tps: 1 } }
+      workload:
+        module: workloads/readAnchor.js
+        arguments: { seed: "FINAL_01", totalAssets: 1500 }
 
-    # # --- STEP 3: FI1 Grants Access to FI2 ---
-    # - label: "Step-2-FI1-Approve-FI2"
-    #   txNumber: 1000
-    #   rateControl:
-    #     type: fixed-rate
-    #     opts: { tps: 8 } # Read-Modify-Write is heavier on CPU
-    #   workload:
-    #     module: workloads/approve.js
-    #     arguments:
-    #       seed: "FINAL_01"
-    #       totalAssets: 1500
+    # --- STEP 3: FI1 Grants Access to FI2 ---
+    - label: "Step-2-FI1-Approve-FI2"
+      txNumber: 1000
+      rateControl:
+        type: fixed-rate
+        opts: { tps: 8 } # Read-Modify-Write is heavier on CPU
+      workload:
+        module: workloads/approve.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
 
     # --- STEP 4: FI2 Authorized Data Retrieval ---
     - label: "Step-3-FI2-Get-Data"
@@ -61,4 +61,4 @@ test:
         arguments:
           seed: "FINAL_01"
           totalAssets: 1500
-          invoker: "FI2"
+          invoker: "FI1"
