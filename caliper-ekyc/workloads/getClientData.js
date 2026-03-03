@@ -34,7 +34,7 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         // Construct the DID: did:fabric:usr_[Seed]_[GlobalIndex]
         const globalUniqueIndex = (randomWorkerLane * this.laneSize) + randomIndexInLane;
         const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
-        const fields = ["name", "address"];
+        const fields = "name,address";
 
         // 5. Query Execution
         // Using 'evaluateTransaction' logic via readOnly: true
