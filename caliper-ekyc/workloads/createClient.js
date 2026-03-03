@@ -15,20 +15,23 @@ class CreateClientWorkload extends WorkloadModuleBase {
         this.runID = this.roundArguments.seed || 'STRESS';
         this.offset = this.roundArguments.offset || 0;
         
-        // Split the 5000 transactions of the round among the 3 workers
-        // 5000 / 3 = 1666 transactions per worker
-        this.txsPerWorker = Math.floor(this.totalRequests / this.totalWorkers);
+        // SAFETY: If Caliper doesn't pass the total, we assume a safe buffer.
+        // We use a large multiplier (100,000) to ensure workers never cross "lanes".
+        this.laneSize = 100000; 
         this.invoker = 'FI1';
+        
+        console.log(`Worker ${this.workerIndex} initialized. Lane starts at: ${this.offset + (this.workerIndex * this.laneSize)}`);
     }
 
     async submitTransaction() {
         this.txIndex++;
 
-        // Each worker stays in their own "lane"
-        // Worker 0: 0 + (0*1666) + 1 = 1
-        // Worker 1: 0 + (1*1666) + 1 = 1667
-        // Worker 2: 0 + (2*1666) + 1 = 3333
-        const globalUniqueIndex = this.offset + (this.workerIndex * this.txsPerWorker) + this.txIndex;
+        // New Robust Formula:
+        // Round Offset + (Worker ID * 100,000) + Transaction Progress
+        // Worker 0: 0, 1, 2...
+        // Worker 1: 100000, 100001...
+        // Worker 2: 200000, 200001...
+        const globalUniqueIndex = this.offset + (this.workerIndex * this.laneSize) + this.txIndex;
         
         const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 

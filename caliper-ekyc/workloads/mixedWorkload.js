@@ -13,23 +13,30 @@ class MixedWorkload extends WorkloadModuleBase {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
         this.runID = this.roundArguments.seed || 'STRESS';
-        this.totalPreloaded = this.roundArguments.totalAssets || 10000;
-        this.invoker = 'FI1';
+        this.laneSize = 100000; // Match the lane size from earlier rounds
         
-        // Ensure writes start AFTER the preloaded data
-        // Each worker gets a "Mixed" lane starting at 10,001
-        this.writeOffset = this.totalPreloaded; 
-        this.txsPerWorker = 2000; // Buffer space for new writes per worker
+        // Total assets per worker from the PRELOAD phase (e.g., 10k total / 3 workers)
+        const preloadTotal = this.roundArguments.totalAssets || 10000;
+        this.assetsPreloadedPerWorker = Math.floor(preloadTotal / this.totalWorkers);
+        
+        // We start mixed writes at a very high offset to avoid any overlap
+        this.mixedWriteOffset = 500000; 
+        
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {
         this.txIndex++;
-        const random = Math.random();
+        const isWrite = Math.random() < 0.05; // 5% Write probability
 
-        // --- 95% READS: Targeting the 10k preloaded assets ---
-        if (random < 0.95) {
-            const randomTarget = Math.floor(Math.random() * this.totalPreloaded) + 1;
-            const readDid = `did:fabric:usr_${this.runID}_${randomTarget}`;
+        // --- 95% READS: Targeting the Sharded Lanes (0, 100k, 200k) ---
+        if (!isWrite) {
+            const randomWorkerLane = Math.floor(Math.random() * this.totalWorkers);
+            const randomIndexInLane = Math.floor(Math.random() * this.assetsPreloadedPerWorker) + 1;
+            
+            // Reconstruct the DID from the preload lanes
+            const globalReadIndex = (randomWorkerLane * this.laneSize) + randomIndexInLane;
+            const readDid = `did:fabric:usr_${this.runID}_${globalReadIndex}`;
 
             return this.sutAdapter.sendRequests({
                 contractId: 'eKYC',
@@ -40,10 +47,10 @@ class MixedWorkload extends WorkloadModuleBase {
             });
         } 
 
-        // --- 5% WRITES: Creating brand-new unique entries ---
+        // --- 5% WRITES: Creating new entries in a separate "Mixed" lane ---
         else {
-            // Formula: PreloadTotal + (MyLane) + MyProgress
-            const uniqueWriteIndex = this.writeOffset + (this.workerIndex * this.txsPerWorker) + this.txIndex;
+            // Formula: MixedOffset + (WorkerLane) + Progress
+            const uniqueWriteIndex = this.mixedWriteOffset + (this.workerIndex * this.laneSize) + this.txIndex;
             const writeDid = `did:fabric:usr_mixed_${this.runID}_${uniqueWriteIndex}`;
             
             const client = {
@@ -52,19 +59,13 @@ class MixedWorkload extends WorkloadModuleBase {
             };
             const hash = crypto.createHash('sha256').update(writeDid).digest('hex');
 
-            try {
-                return await this.sutAdapter.sendRequests({
-                    contractId: 'eKYC',
-                    contractFunction: 'createClient',
-                    invokerIdentity: this.invoker,
-                    contractArguments: [JSON.stringify(client), hash],
-                    readOnly: false
-                });
-            } catch (error) {
-                // Defensive Backoff for 2 CPU limit
-                await new Promise(resolve => setTimeout(resolve, 500));
-                throw error;
-            }
+            return this.sutAdapter.sendRequests({
+                contractId: 'eKYC',
+                contractFunction: 'createClient',
+                invokerIdentity: this.invoker,
+                contractArguments: [JSON.stringify(client), hash],
+                readOnly: false
+            });
         }
     }
 }

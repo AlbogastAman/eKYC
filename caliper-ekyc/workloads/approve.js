@@ -7,10 +7,14 @@ class ApproveWorkload extends WorkloadModuleBase {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
         this.runID = this.roundArguments.seed || 'STRESS';
-        this.totalAssets = this.roundArguments.totalAssets || 10000;
+        this.offset = this.roundArguments.offset || 0;
         
-        // Divide the 10,000 preloaded assets among the 3 workers
-        this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
+        // Use the EXACT same lane size as createClient.js
+        this.laneSize = 100000; 
+        
+        // This is the number of assets each worker actually created per round
+        // Defaulting to 1666 (5000 total / 3 workers)
+        this.assetsCreatedPerWorker = Math.floor((this.roundArguments.totalRequests || 5000) / this.totalWorkers);
         
         this.txIndex = 0;
         this.invoker = 'FI1';
@@ -19,9 +23,11 @@ class ApproveWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
 
-        // Stay in your "lane" to avoid worker-on-worker collisions
-        // This math ensures Worker 0 only approves IDs 1-3333, Worker 1 approves 3334-6666, etc.
-        const globalUniqueIndex = (this.workerIndex * this.assetsPerWorker) + (this.txIndex % this.assetsPerWorker) + 1;
+        // Calculate the DID using the synchronized "Lane" math
+        // We use modulo (%) so if the test runs longer than the data available, 
+        // it just loops back and re-approves the same IDs (perfectly fine for stress testing)
+        const localIndex = (this.txIndex % this.assetsCreatedPerWorker) + 1;
+        const globalUniqueIndex = this.offset + (this.workerIndex * this.laneSize) + localIndex;
         
         const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
@@ -30,7 +36,7 @@ class ApproveWorkload extends WorkloadModuleBase {
             contractFunction: 'approve',
             invokerIdentity: this.invoker, 
             contractArguments: [did, 'FI2'], 
-            readOnly: false // Update operation
+            readOnly: false // Update operation (Read-Modify-Write)
         };
 
         return this.sutAdapter.sendRequests(request);

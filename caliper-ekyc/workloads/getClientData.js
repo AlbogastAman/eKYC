@@ -6,9 +6,15 @@ class GetClientDataWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
         
-        // Match the seed and pool size from the YAML
         this.runID = this.roundArguments.seed || 'STRESS';
-        this.totalAssets = this.roundArguments.totalAssets || 10000;
+        this.offset = this.roundArguments.offset || 0;
+        
+        // Match the exact lane size used in createClient.js
+        this.laneSize = 100000; 
+        
+        // Calculate assets per worker based on the preload round (e.g., 5000 / 3)
+        const totalInRound = this.roundArguments.totalRequests || 5000;
+        this.assetsCreatedPerWorker = Math.floor(totalInRound / this.totalWorkers);
         
         this.txIndex = 0;
         this.invoker = 'FI1';
@@ -17,24 +23,27 @@ class GetClientDataWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         this.txIndex++;
 
-        // 1. Pick ANY number from the total pool created by all workers
-        const globalRandomIndex = Math.floor(Math.random() * this.totalAssets) + 1;
+        // 1. Pick a random worker's lane to ensure we spread queries across the whole DB
+        const randomWorkerLane = Math.floor(Math.random() * this.totalWorkers);
         
-        // 2. Reconstruct the global DID format: did:fabric:usr_[Seed]_[Number]
-        const did = `did:fabric:usr_${this.runID}_${globalRandomIndex}`;
+        // 2. Pick a random index within that specific lane's range
+        const randomIndexInLane = Math.floor(Math.random() * this.assetsCreatedPerWorker) + 1;
+        
+        // 3. Reconstruct the Global DID: usr_[Seed]_[LaneOffset + Index]
+        const globalUniqueIndex = this.offset + (randomWorkerLane * this.laneSize) + randomIndexInLane;
+        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
-        // 3. Alternate field requests to test CouchDB projection performance
+        // 4. Test "Field Projection" (Selective Read)
+        // This is a great test for your 2 CPU VM to see if filtering fields saves CPU time
         const fields = this.txIndex % 2 === 0 ? "did,whoRegistered" : "did,status";
 
-        const request = {
+        return this.sutAdapter.sendRequests({
             contractId: 'eKYC',
             contractFunction: 'getClientData',
             invokerIdentity: this.invoker,
             contractArguments: [did, fields],
             readOnly: true
-        };
-
-        return this.sutAdapter.sendRequests(request);
+        });
     }
 }
 
