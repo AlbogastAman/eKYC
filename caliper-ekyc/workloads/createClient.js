@@ -18,7 +18,7 @@ class CreateClientWorkload extends WorkloadModuleBase {
         // SAFETY: If Caliper doesn't pass the total, we assume a safe buffer.
         // We use a large multiplier (100,000) to ensure workers never cross "lanes".
         this.laneSize = 100000; 
-        this.invoker = '_Org2MSP_FI2';
+        this.invoker = 'FI1';
         
         console.log(`Worker ${this.workerIndex} initialized. Lane starts at: ${this.offset + (this.workerIndex * this.laneSize)}`);
     }

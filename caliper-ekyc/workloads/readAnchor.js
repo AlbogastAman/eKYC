@@ -18,7 +18,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
 
         return this.sutAdapter.sendRequests({
             contractId: 'eKYC',
-            contractFunction: 'getClientData', // Or 'readAnchor' if that's your function name
+            contractFunction: 'readAnchor',
             invokerIdentity: this.invoker,
             contractArguments: [anchorDID],
             readOnly: true 

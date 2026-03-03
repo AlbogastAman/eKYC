@@ -1,6 +1,6 @@
 test:
-  name: eKYC-Multi-Org-Handoff-Benchmark
-  description: Testing FI1 Creation, FI1 Approval, and FI2 Authorized Access
+  name: eKYC-Benchmark
+  description: Testing Client Creation,FI Approval, and Authorized Access to KYC data
 
   workers:
     type: local
@@ -16,8 +16,8 @@ test:
       interval: 2 # Reduced frequency to save CPU cycles
 
   rounds:
-    # --- STEP 1: FI1 Identity Creation ---
-    - label: "Step-1-FI1-Creation"
+    # --- STEP 1: FI1 Client Creation ---
+    - label: "Step 1: Client Creation"
       txNumber: 1500
       rateControl:
         type: fixed-rate
@@ -36,8 +36,8 @@ test:
         module: workloads/readAnchor.js
         arguments: { seed: "FINAL_01", totalAssets: 1500 }
 
-    # --- STEP 3: FI1 Grants Access to FI2 ---
-    - label: "Step-2-FI1-Approve-FI2"
+    # --- STEP 3: Client Grants Access to FI2 ---
+    - label: "Step-2: FI Approval"
       txNumber: 1000
       rateControl:
         type: fixed-rate
@@ -48,8 +48,8 @@ test:
           seed: "FINAL_01"
           totalAssets: 1500
 
-    # --- STEP 4: FI2 Authorized Data Retrieval ---
-    - label: "Step-3-FI2-Get-Data"
+    # --- STEP 4: FI2 Data Retrieval ---
+    - label: "Step 3: FI2 Get client data"
       txDuration: 120
       rateControl:
         type: linear-rate

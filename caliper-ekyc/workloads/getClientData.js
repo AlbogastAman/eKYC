@@ -17,7 +17,7 @@ class GetClientDataWorkload extends WorkloadModuleBase {
 
         // 2. Identity Mapping - The Fix for "No contracts found"
         // We prioritize the argument passed from the Benchmark YAML
-        this.invoker = this.roundArguments.invoker || 'FI2';
+        this.invoker = this.roundArguments.invoker || '_Org2MSP_FI2';
 
         // 3. Sharding Logic (Must match createClient.js)
         this.laneSize = 100000;

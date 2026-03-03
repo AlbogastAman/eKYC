@@ -17,7 +17,7 @@ class ApproveWorkload extends WorkloadModuleBase {
         this.assetsCreatedPerWorker = Math.floor((this.roundArguments.totalRequests || 5000) / this.totalWorkers);
 
         this.txIndex = 0;
-        this.invoker = '_Org2MSP_FI2';
+        this.invoker = 'FI1';
     }
 
     async submitTransaction() {
@@ -35,7 +35,7 @@ class ApproveWorkload extends WorkloadModuleBase {
             contractId: 'eKYC',
             contractFunction: 'approve',
             invokerIdentity: this.invoker,
-            contractArguments: [did, 'FI1'],
+            contractArguments: [did, 'FI2'],
             readOnly: false // Update operation (Read-Modify-Write)
         };
 
