@@ -61,4 +61,4 @@ test:
         arguments:
           seed: "FINAL_01"
           totalAssets: 1500
-          invoker: "FI2"
+          invoker: "_Org2MSP_FI2"

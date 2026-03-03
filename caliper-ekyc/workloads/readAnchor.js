@@ -8,7 +8,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
 
         this.runID = this.roundArguments.seed || 'FINAL_01';
         // We use FI1 because they are the owner who just created the data
-        this.invoker = 'FI2'; 
+        this.invoker = '_Org2MSP_FI2'; 
     }
 
     async submitTransaction() {
