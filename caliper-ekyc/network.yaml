@@ -15,8 +15,7 @@ channels:
         contractID: eKYC
         organizations: 
             - Org1MSP
-            - Org2MSP
-            
+            - Org2MSP       
 organizations:
   - mspid: Org1MSP
     identities:
