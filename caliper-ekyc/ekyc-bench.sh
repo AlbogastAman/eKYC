@@ -3,7 +3,7 @@
 # --- Configuration ---
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RESULT_DIR="./results/bench_${TIMESTAMP}"
-CALIPER_BIN="NODE_OPTIONS='--max-old-space-size=2048' npx caliper launch manager" # Adjust if using global install
+CALIPER_BIN="npx caliper launch manager" # Adjust if using global install
 WORKSPACE="./"
 NETWORK_CONFIG="network.yaml"
 BENCH_CONFIG="benchmark.yaml"
