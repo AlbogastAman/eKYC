@@ -62,3 +62,18 @@ test:
           seed: "FINAL_01"
           totalAssets: 1500
           invoker: "_Org2MSP_FI2"
+
+    # --- STEP 5: Mixed Workload Stress Test ---
+    - label: "Step 4: Mixed Stress Test"
+      txNumber: 5000
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 10
+          finishingTps: 40
+      workload:
+        module: workloads/mixedWorkload.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
+          invoker: "FI1" # Use FI1 or _Org2MSP_FI2
