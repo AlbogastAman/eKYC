@@ -36,7 +36,7 @@ class MixedWorkload extends WorkloadModuleBase {
             
             // Reconstruct the DID from the preload lanes
             const globalReadIndex = (randomWorkerLane * this.laneSize) + randomIndexInLane;
-            const readDid = `did:fabric:usr1_${this.runID}_${globalReadIndex}`;
+            const readDid = `did:fabric:usr_${this.runID}_${globalReadIndex}`;
 
             return this.sutAdapter.sendRequests({
                 contractId: 'eKYC',
@@ -51,7 +51,7 @@ class MixedWorkload extends WorkloadModuleBase {
         else {
             // Formula: MixedOffset + (WorkerLane) + Progress
             const uniqueWriteIndex = this.mixedWriteOffset + (this.workerIndex * this.laneSize) + this.txIndex;
-            const writeDid = `did:fabric:usr1_mixed_${this.runID}_${uniqueWriteIndex}`;
+            const writeDid = `did:fabric:usr_mixed_${this.runID}_${uniqueWriteIndex}`;
             
             const client = {
                 did: writeDid,

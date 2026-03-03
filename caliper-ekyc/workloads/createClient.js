@@ -33,7 +33,7 @@ class CreateClientWorkload extends WorkloadModuleBase {
         // Worker 2: 200000, 200001...
         const globalUniqueIndex = this.offset + (this.workerIndex * this.laneSize) + this.txIndex;
         
-        const did = `did:fabric:usr1_${this.runID}_${globalUniqueIndex}`;
+        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
         const client = {
             did: did,

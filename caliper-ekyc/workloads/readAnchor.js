@@ -20,7 +20,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
         const totalPreloadedInRound = 5000;
         this.assetsCreatedPerWorker = Math.floor(totalPreloadedInRound / this.totalWorkers);
 
-        this.invoker = 'FI1';
+        this.invoker = 'FI2';
     }
 
     async submitTransaction() {
@@ -35,7 +35,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
         // 3. Reconstruct the Global ID
         const globalUniqueIndex = this.offset + (randomWorkerLane * this.laneSize) + randomIndexInLane;
 
-        const did = `did:fabric:usr1_${this.runID}_${globalUniqueIndex}`;
+        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
         return this.sutAdapter.sendRequests({
             contractId: 'eKYC',

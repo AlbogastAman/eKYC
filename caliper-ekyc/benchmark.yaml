@@ -1,7 +1,7 @@
 test:
   name: eKYC-Hyperledger-fabric-benchmark
   description: Optimized for 2CPU/4GB RAM environment
-  
+
   workers:
     type: local
     number: 3 # Optimal for 2 CPUs
@@ -22,28 +22,33 @@ test:
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 10 # Half the speed, double the stability
       workload:
         module: workloads/createClient.js
         arguments: { seed: "FINAL_01", totalAssets: 10000 }
 
     # --- Step 2: Intermediate Indexing Breath ---
     - label: mid-cooldown
-      txDuration: 45 # Longer pause for small RAM
+      txDuration: 60
       rateControl: { type: fixed-rate, opts: { tps: 1 } }
-      workload: { module: workloads/readAnchor.js, arguments: { seed: "FINAL_01", totalAssets: 10000 } }
-
+      workload:
+        module: workloads/readAnchor.js
+        arguments:
+          seed: "FINAL_01"
+          # FIX: Only look for what we just created in Part 1
+          totalAssets: 5000
+          offset: 0
+          
     # --- Step 3: Managed Preload (Part B) ---
     - label: preload-part-2
       txNumber: 5000
       rateControl:
         type: fixed-rate
-        opts: { tps: 20 }
+        opts:
+          tps: 10
       workload:
         module: workloads/createClient.js
-        # ADD OFFSET: This tells the script to start IDs at 5001+
         arguments: { seed: "FINAL_01", totalAssets: 10000, offset: 5000 }
-
     # --- Step 4: Warm Read Stress ---
     - label: read-performance
       txDuration: 60
