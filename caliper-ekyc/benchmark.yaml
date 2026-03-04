@@ -12,7 +12,13 @@ test:
     monitoring:
       type: ["docker"]
       docker:
-        containers: ["peer0.org1.example.com", "couchdb0"] # Monitor only key bottlenecks
+        containers: [
+            "peer0.org1.example.com",
+            "peer0.org2.example.com",
+            "orderer.example.com",
+            "couchdb0",
+            "couchdb1",
+          ] # Monitor only key bottlenecks
       interval: 2 # Reduced frequency to save CPU cycles
 
   rounds:
