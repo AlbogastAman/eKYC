@@ -1,4 +1,5 @@
 const validator = require('express-validator');
+const allowedCountries = ['834', '826'];
 
 exports.registration = [
 
@@ -59,8 +60,8 @@ exports.registration = [
     validator
         .body('country')
         .trim()
-        .isIn(['834', '826'])
-        .withMessage('Country must be either United Kingdom or Tanzania.')
+        .isIn(allowedCountries)
+        .withMessage(`Country must be one of: ${allowedCountries.join(', ')}`)
         .escape(),
 ];
 
