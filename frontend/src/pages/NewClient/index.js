@@ -43,7 +43,6 @@ const Login = () => {
         setClientData({ ...clientData, country: e.target.value });
     };
 
-
     function handleLogin(e) {
         setClientData({ ...clientData, login: e.target.value });
     };
@@ -192,13 +191,16 @@ const Login = () => {
                             </Box>
                             <Box width={1} px={3}>
                                 <Field label="Country" width={1}>
-                                    <Form.Input
-                                        type="text"
+                                    <Form.Select
                                         required
                                         onChange={handleCounrty}
                                         value={clientData.country}
                                         width={1}
-                                    />
+                                    >
+                                        <option value="">Select Country</option>
+                                        <option value="834">Tanzania</option>
+                                        <option value="826">United Kingdom</option>
+                                    </Form.Select>
                                 </Field>
                             </Box>
                         </Flex>

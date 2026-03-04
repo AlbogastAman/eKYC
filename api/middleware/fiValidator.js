@@ -31,7 +31,37 @@ exports.registration = [
         .withMessage('Id number must be specified.')
         .isAlphanumeric()
         .withMessage('Name has non-alphanumeric characters.')
-        .escape()
+        .escape(),
+    validator
+        .body('dateOfBirth')
+        .isISO8601()
+        .withMessage('Invalid date of birth.')
+        .custom((value) => {
+            const today = new Date();
+            const birthDate = new Date(value);
+
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+
+            if (
+                monthDiff < 0 ||
+                (monthDiff === 0 && today.getDate() < birthDate.getDate())
+            ) {
+                age--;
+            }
+
+            if (age < 18) {
+                throw new Error('Client must be at least 18 years old.');
+            }
+
+            return true;
+        }),
+    validator
+        .body('country')
+        .trim()
+        .isIn(['834', '826'])
+        .withMessage('Country must be either United Kingdom or Tanzania.')
+        .escape(),
 ];
 
 exports.login = [
@@ -70,7 +100,7 @@ exports.vc = [
     validator
         .body('proof')
         .notEmpty()
-        .withMessage('Proof must be specified.'), 
+        .withMessage('Proof must be specified.'),
     validator
         .body('publicSignals')
         .isArray({ min: 5, max: 5 })
