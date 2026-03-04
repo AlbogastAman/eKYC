@@ -191,16 +191,16 @@ const Login = () => {
                             </Box>
                             <Box width={1} px={3}>
                                 <Field label="Country" width={1}>
-                                    <Form.Select
+                                    <select
                                         required
                                         onChange={handleCounrty}
                                         value={clientData.country}
-                                        width={1}
+                                        style={{ width: '100%', padding: '8px' }}
                                     >
                                         <option value="">Select Country</option>
                                         <option value="834">Tanzania</option>
                                         <option value="826">United Kingdom</option>
-                                    </Form.Select>
+                                    </select>
                                 </Field>
                             </Box>
                         </Flex>
