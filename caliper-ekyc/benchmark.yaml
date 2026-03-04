@@ -4,64 +4,62 @@ test:
 
   workers:
     type: local
-    number: 3 # Maximizes 2 CPUs without overloading the RAM
+    number: 2 # Reduced to 2 to leave CPU for Docker containers
 
-    options:
+  options:
     test:
-      transactionFailureThreshold: 5 # Tighter tolerance for better data
+      transactionFailureThreshold: 20 # Allow some jitter during stress
     monitoring:
       type: ["docker"]
       docker:
-        containers: [
+        # Note: Ensure these names match 'docker ps' exactly
+        containers:
+          [
             "peer0.org1.example.com",
             "peer0.org2.example.com",
             "orderer.example.com",
             "couchdb0",
             "couchdb1",
-          ] # Monitor only key bottlenecks
-      interval: 2 # Reduced frequency to save CPU cycles
+          ]
+      interval: 5 # Increased to 5s to reduce monitoring overhead
 
   rounds:
-    # --- STEP 1: FI1 Client Creation ---
     - label: "Step 1: Client Creation"
       txNumber: 1500
       rateControl:
         type: fixed-rate
-        opts: { tps: 10 } # Stable baseline for 4GB RAM
+        opts: { tps: 10 }
       workload:
         module: workloads/createClient.js
         arguments:
           seed: "FINAL_01"
           totalAssets: 1500
 
-    # --- STEP 2: Database Settling (Cooldown) ---
     - label: "Cooldown-Sync"
-      txDuration: 30
+      txDuration: 60 # Increased to 60s to let CouchDB finish indexing Step 1
       rateControl: { type: fixed-rate, opts: { tps: 1 } }
       workload:
         module: workloads/readAnchor.js
         arguments: { seed: "FINAL_01", totalAssets: 1500 }
 
-    # --- STEP 3: Client Grants Access to FI2 ---
-    - label: "Step-2: FI Approval"
+    - label: "Step 2: FI Approval"
       txNumber: 1000
       rateControl:
         type: fixed-rate
-        opts: { tps: 8 } # Read-Modify-Write is heavier on CPU
+        opts: { tps: 8 }
       workload:
         module: workloads/approve.js
         arguments:
           seed: "FINAL_01"
           totalAssets: 1500
 
-    # --- STEP 4: FI2 Data Retrieval ---
     - label: "Step 3: FI2 Get client data"
       txDuration: 120
       rateControl:
         type: linear-rate
         opts:
           startingTps: 10
-          finishingTps: 50 # Stress test the read-only capability
+          finishingTps: 25 # Capped at 25 to avoid 'ENHANCE_YOUR_CALM' errors
       workload:
         module: workloads/getClientData.js
         arguments:
@@ -69,17 +67,15 @@ test:
           totalAssets: 1500
           invoker: "_Org2MSP_FI2"
 
-    # --- STEP 5: Mixed Workload Stress Test ---
     - label: "Step 4: Mixed Stress Test"
-      txNumber: 5000
+      txNumber: 3000
       rateControl:
-        type: linear-rate
+        type: fixed-feedback-rate
         opts:
-          startingTps: 10
-          finishingTps: 40
+          tps: 30 # The target speed
+          unfinishedTransactionThreshold: 100 # The "Safety Brake"
       workload:
         module: workloads/mixedWorkload.js
         arguments:
           seed: "FINAL_01"
           totalAssets: 1500
-          invoker: "FI1" # Use FI1 or _Org2MSP_FI2

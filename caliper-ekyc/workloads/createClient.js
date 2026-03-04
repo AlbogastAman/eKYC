@@ -12,7 +12,7 @@ class CreateClientWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
 
-        this.runID = this.roundArguments.seed || 'STRESS';
+        this.runID = this.roundArguments.seed || 'FINAL_01';
         this.offset = this.roundArguments.offset || 0;
 
         // SAFETY: If Caliper doesn't pass the total, we assume a safe buffer.

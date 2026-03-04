@@ -6,7 +6,7 @@ class ApproveWorkload extends WorkloadModuleBase {
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
 
-        this.runID = this.roundArguments.seed || 'STRESS';
+        this.runID = this.roundArguments.seed || 'FINAL_01';
         this.offset = this.roundArguments.offset || 0;
 
         // Use the EXACT same lane size as createClient.js
