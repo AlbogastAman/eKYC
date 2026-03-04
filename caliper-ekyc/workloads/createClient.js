@@ -14,12 +14,12 @@ class CreateClientWorkload extends WorkloadModuleBase {
 
         this.runID = this.roundArguments.seed || 'STRESS';
         this.offset = this.roundArguments.offset || 0;
-        
+
         // SAFETY: If Caliper doesn't pass the total, we assume a safe buffer.
         // We use a large multiplier (100,000) to ensure workers never cross "lanes".
-        this.laneSize = 100000; 
+        this.laneSize = 100000;
         this.invoker = 'FI1';
-        
+
         console.log(`Worker ${this.workerIndex} initialized. Lane starts at: ${this.offset + (this.workerIndex * this.laneSize)}`);
     }
 
@@ -32,12 +32,12 @@ class CreateClientWorkload extends WorkloadModuleBase {
         // Worker 1: 100000, 100001...
         // Worker 2: 200000, 200001...
         const globalUniqueIndex = this.offset + (this.workerIndex * this.laneSize) + this.txIndex;
-        
+
         const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
 
         const client = {
             did: did,
-            whoRegistered: { ledgerUser: 'FI2', orgNum: 1 }
+            whoRegistered: { ledgerUser: 'FI1', orgNum: 1 }
         };
 
         const hash = crypto.createHash('sha256').update(did).digest('hex');
