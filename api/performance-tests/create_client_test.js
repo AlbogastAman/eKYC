@@ -11,7 +11,7 @@ let createdIds = [];
 export default function () {
     const url = `${BASE_URL}/fi/createClient`;
     const uniqueId = uuidv4().substring(0, 8);
-    const idNumber = `TAE-${uniqueId}`;
+    const idNumber = `TAE${uniqueId}`;
 
     const payload = {
         login: `test_user_${uniqueId}`,
