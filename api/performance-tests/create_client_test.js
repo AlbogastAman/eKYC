@@ -33,7 +33,7 @@ export default function () {
 
     const res = http.post(url, payload, params);
 
-    console.log("res####", res)
+    console.log("res####", res.body)
 
     const isSuccessful = check(res, {
         'is status 200': (r) => r.status === 200,
@@ -42,6 +42,7 @@ export default function () {
         },
     });
 
+    console.log("isSuccessful####", isSuccessful)
     // SUCCESS LOGIC: Add the ID to our list so we can use it in the GET test
     if (isSuccessful) {
         createdIds.push(`${idNumber}@${randomFI.name}`);
