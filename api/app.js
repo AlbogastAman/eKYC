@@ -6,6 +6,7 @@ const cors = require('cors');
 const createError = require('http-errors');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const client = require('prom-client');
 
 const clientRouter = require('./routes/client');
 const financialInstitutionRouter = require('./routes/financialInstitution');
@@ -25,8 +26,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Collect default metrics
+client.collectDefaultMetrics();
+
+// Optional: custom HTTP request counter
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status']
+});
+
+// Middleware to increment request counter
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequestCounter.labels(req.method, req.path, res.statusCode).inc();
+  });
+  next();
+}); 
+
 app.use('/client', clientRouter);
 app.use('/fi', financialInstitutionRouter);
+
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
