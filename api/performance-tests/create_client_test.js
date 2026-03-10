@@ -33,7 +33,7 @@ export default function () {
 
     const res = http.post(url, payload, params);
 
-    console.log("res####", res.json())
+    console.log("res####", res)
 
     const isSuccessful = check(res, {
         'is status 200': (r) => r.status === 200,
@@ -42,7 +42,6 @@ export default function () {
         },
     });
 
-    console.log("isSuccessful####", isSuccessful)
     // SUCCESS LOGIC: Add the ID to our list so we can use it in the GET test
     if (isSuccessful) {
         createdIds.push(`${idNumber}@${randomFI.name}`);
@@ -53,6 +52,8 @@ export default function () {
 
 export function handleSummary(data) {
     // This runs ONCE at the very end of the test
+    // Debugging: This will print to your terminal to confirm the function ran
+    console.log(`Finished test. Collected ${createdIds.length} IDs.`);
     return {
         'stdout': JSON.stringify(data),
         'created_ids.json': JSON.stringify(createdIds),

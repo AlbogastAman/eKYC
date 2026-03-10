@@ -11,23 +11,18 @@ const proofPool = new SharedArray('proofs', function () {
 });
 
 export default function () {
-    const url = `${BASE_URL}/api/v1/verifyUserVC`;
+    const url = `${BASE_URL}/fi/verifyUserVC`;
 
     // Pick a random proof-set from our pool
     const record = proofPool[Math.floor(Math.random() * proofPool.length)];
 
-    const payload = JSON.stringify({
-        vc: record.vc,
-        userDid: record.userDid,
-        proof: record.proof,
-        publicSignals: record.publicSignals
-    });
+    const payload = JSON.stringify(record);
 
     const randomFI = FI_COOKIES[Math.floor(Math.random() * FI_COOKIES.length)];
     const params = {
         headers: {
             'Content-Type': 'application/json',
-            'Cookie': randomFI.Cookie
+            'Cookie': randomFI.cookie
         },
     };
 
