@@ -17,7 +17,7 @@ template IdentityGate() {
     signal input expectedIdHash;
     signal input expectedCountryHash;
     signal input thresholdDate;   // e.g., 20080217
-    signal input requiredCountry;  // e.g., 65 (ISO code)
+    signal input requiredCountry;  // e.g., 834 (ISO code)
 
     // 1. VERIFY HASHES (Link to the VC)
     component dobHasher = Poseidon(2);

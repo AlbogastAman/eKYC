@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://34.16.69.199:5000';
+export const BASE_URL = 'http://35.239.83.149:5000';
 
 export const options = {
     stages: [
