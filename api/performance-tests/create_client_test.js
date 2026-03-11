@@ -2,11 +2,10 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 import { BASE_URL, FI_COOKIES, options } from "./configs.js";
-import { writeFileSync, open } from 'k6/x/fs';
 
 export { options };
 
-// This array lives in the memory of the k6 process
+// Global array to collect IDs
 let createdIds = [];
 
 export default function () {
@@ -41,22 +40,21 @@ export default function () {
         },
     });
 
-    // SUCCESS LOGIC: Add the ID to our list so we can use it in the GET test
     if (isSuccessful) {
-        console.log("res####", res.json())
+        // Collect the ID for the next test phase
         createdIds.push(`${idNumber}@${randomFI.name}`);
     }
 
-    sleep(1);
+    // IMPORTANT: Because your Grafana chart shows 2s lag, 
+    // we increase sleep to give the Node.js event loop time to recover.
+    sleep(2);
 }
 
-
 export function handleSummary(data) {
-    // Write IDs to JSON
-    writeFileSync('./created_ids.json', JSON.stringify(createdIds, null, 2));
-
-    // Return the normal summary
+    console.log(`Test finished. Total IDs collected: ${createdIds.length}`);
+    
     return {
-        stdout: JSON.stringify(data, null, 2),
+        'stdout': JSON.stringify(data), // Standard k6 output to terminal
+        'created_ids.json': JSON.stringify(createdIds), // NATIVE file writing
     };
 }
