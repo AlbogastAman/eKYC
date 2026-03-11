@@ -2,6 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 import { BASE_URL, FI_COOKIES, options } from "./configs.js";
+import { writeFileSync, open } from 'k6/x/fs';
 
 export { options };
 
@@ -33,8 +34,6 @@ export default function () {
 
     const res = http.post(url, payload, params);
 
-    console.log("res####", res.json())
-
     const isSuccessful = check(res, {
         'is status 200': (r) => r.status === 200,
         'has txId': (r) => {
@@ -44,18 +43,20 @@ export default function () {
 
     // SUCCESS LOGIC: Add the ID to our list so we can use it in the GET test
     if (isSuccessful) {
+        console.log("res####", res.json())
         createdIds.push(`${idNumber}@${randomFI.name}`);
     }
 
     sleep(1);
 }
 
+
 export function handleSummary(data) {
-    // This runs ONCE at the very end of the test
-    // Debugging: This will print to your terminal to confirm the function ran
-    console.log(`Finished test. Collected ${createdIds.length} IDs.`);
+    // Write IDs to JSON
+    writeFileSync('./created_ids.json', JSON.stringify(createdIds, null, 2));
+
+    // Return the normal summary
     return {
-        'stdout': JSON.stringify(data),
-        'created_ids.json': JSON.stringify(createdIds),
+        stdout: JSON.stringify(data, null, 2),
     };
 }
