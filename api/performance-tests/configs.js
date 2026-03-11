@@ -2,14 +2,21 @@ export const BASE_URL = 'http://35.239.83.149:5000';
 
 export const options = {
     stages: [
-        { duration: '1m', target: 20 }, // You can safely hit 20-30 VUs now
+        { duration: '1m', target: 20 },
         { duration: '3m', target: 50 },
         { duration: '1m', target: 0 },
     ],
     thresholds: {
-        http_req_duration: ['p(95)<5000'], // Fabric writes are slow; 5s is a fair limit
-        http_req_failed: ['rate<0.05'],    // Allow 5% failure for MVCC collisions
+        http_req_duration: [
+            'p(95)<5000',
+            'p(99)<8000'
+        ],
+        http_req_failed: ['rate<0.05'],
     },
+    summaryTrendStats: [
+        'avg','min','med','max',
+        'p(90)','p(95)','p(99)','p(99.9)'
+    ],
 };
 
 export const FI_COOKIES = [

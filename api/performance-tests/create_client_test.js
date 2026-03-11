@@ -33,7 +33,7 @@ export default function () {
 
     const res = http.post(url, payload, params);
 
-    console.log("res####", res)
+    console.log("res####", res.json())
 
     const isSuccessful = check(res, {
         'is status 200': (r) => r.status === 200,
