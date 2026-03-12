@@ -30,7 +30,15 @@ export default function () {
 
     check(res, {
         'status is 200': (r) => r.status === 200,
-        'zkp verified': (r) => r.json().verified === true,
+        'zkp verified': (r) => {
+            try {
+                const body = r.json();
+                return body && body.verified === true;
+            } catch (e) {
+                // Returns false if the response isn't valid JSON (e.g., a timeout error)
+                return false;
+            }
+        },
     });
 
     // ZKP verification is heavy on 2 CPUs. 
