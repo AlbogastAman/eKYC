@@ -22,11 +22,11 @@ export default function () {
     // 2. Pick a random ID from the list
     const randomId = clientIds[Math.floor(Math.random() * clientIds.length)];
     const splittedId = randomId.split("@");
-    console("####splittedId ", splittedId)
+    console.log("####splittedId ", splittedId)
     // 3. Define fields to query (matches your API signature)
     const fields = ['name', 'address'];
     const url = `${BASE_URL}/fi/getClientData?clientId=did:fabric:${splittedId[0]}&fields=${fields}`;
-    console("####url ", url)
+    console.log("####url ", url)
     const params = {
         headers: {
             "Cookie": FI_COOKIES.find(x => x.name === splittedId[1]).cookie,
