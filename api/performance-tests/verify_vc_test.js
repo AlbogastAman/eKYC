@@ -7,7 +7,7 @@ export { options };
 
 // Load our pre-generated pool of valid proofs and IDs
 const proofPool = new SharedArray('proofs', function () {
-    return JSON.parse(open('./proof_pool.json')); 
+    return JSON.parse(open('./proof_pool.json'));
 });
 
 export default function () {
@@ -18,7 +18,7 @@ export default function () {
 
     const payload = JSON.stringify(record);
 
-    const randomFI = FI_COOKIES[Math.floor(Math.random() * FI_COOKIES.length)];
+    const randomFI = FI_COOKIES[__VU % FI_COOKIES.length];
     const params = {
         headers: {
             'Content-Type': 'application/json',
@@ -36,22 +36,4 @@ export default function () {
     // ZKP verification is heavy on 2 CPUs. 
     // We use a longer sleep to prevent the Node.js event loop from lagging.
     sleep(2);
-}
-
-export function handleSummary(data) {
-    console.log('\n========= Custom Summary Table =========\n');
-
-    console.table({
-        'Total Iterations': data.iterations.length,
-        'HTTP Requests': data.metrics.http_reqs.count,
-        'Successful Checks (%)': (data.metrics.checks.rate * 100).toFixed(2),
-        'Failed Requests (%)': (data.metrics.http_req_failed.rate * 100).toFixed(2),
-        'Avg Response Time (ms)': data.metrics.http_req_duration.avg.toFixed(2),
-        'Median Response Time (ms)': data.metrics.http_req_duration.med.toFixed(2),
-        'Max Response Time (ms)': data.metrics.http_req_duration.max.toFixed(2),
-        'p95 Response Time (ms)': data.metrics.http_req_duration['p(95)'].toFixed(2),
-        'p99 Response Time (ms)': data.metrics.http_req_duration['p(99)'].toFixed(2),
-    });
-
-    return {};
 }
