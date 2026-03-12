@@ -39,7 +39,6 @@ export default function () {
 }
 
 export function handleSummary(data) {
-    console.log('\n========= Created Ids =========\n', createdIds.length);
     console.log('\n========= Custom Summary Table =========\n');
 
     console.table({

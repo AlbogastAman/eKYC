@@ -35,7 +35,7 @@ export default function () {
     };
 
     const res = http.get(url, params);
-
+    console.log("#### res", res.json())
     // 4. Verification
     check(res, {
         'is status 200': (r) => r.status === 200,
