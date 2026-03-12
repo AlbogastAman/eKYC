@@ -26,6 +26,6 @@ export const FI_COOKIES = [
     },
     {
         "name": "FI2",
-        "cookie": "userJWT=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6IkFNQSIsImlhdCI6MTc3MjYzMzk0N30.alGotzkNZVdjH_9tUwvHE6nsm5fAjDRV3o3yHWLGVY0; ledgerId=did%3Afabric%3Aekyc%3AAMA; whoRegistered=fe84a3c9125c771ce04db8b89af14eb9%3A0cb28c72e8bb8130838da480026ad20a26eb4f75364cdd07a6e2a6c097160ee460d34d2c78d20cc9c1b593fd51c6fdd5f7ea13f234bd5bae; userJWT=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6IkZJMSIsImlhdCI6MTc3MjcyMDg2NH0.uOKVLZcx6bNckJyPKLg_9z31kBz9KDOWSfE8yI6BOiw; orgCredentials=076bc590948648baa668f60391b1b14a%3Aaa3f53482ddac36575420fbc50f44299140ef0cc1eddbd674ce2e23d66466"
+        "cookie": "userJWT=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6IkZJMiIsImlhdCI6MTc3MzMxMzA4Mn0.8yc-o0quj5dKMwpjKnq63IeOg4sO-Pv763Mtf0JKF7s; orgCredentials=7ef5339ff2e4aee9ed878dca8c947d40%3Aeb9bca5d7b281b1df9b67436b9c6823b0d52cefed91e1184d6f293be5e8d6e"
     }
 ]
