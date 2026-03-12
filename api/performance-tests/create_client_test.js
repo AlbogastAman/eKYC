@@ -10,7 +10,6 @@ export default function () {
     const uniqueId = uuidv4().substring(0, 8);
     const idNumber = `TAE${uniqueId}`;
     const randomFI = FI_COOKIES[__VU % FI_COOKIES.length];
-    console.log("####randomFI ", randomFI)
     const payload = {
         login: `test_user_${uniqueId}`,
         password: "stress_test_password",
