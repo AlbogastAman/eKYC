@@ -37,3 +37,22 @@ export default function () {
     // We use a longer sleep to prevent the Node.js event loop from lagging.
     sleep(2);
 }
+
+export function handleSummary(data) {
+    console.log('\n========= Created Ids =========\n', createdIds.length);
+    console.log('\n========= Custom Summary Table =========\n');
+
+    console.table({
+        'Total Iterations': data.iterations.length,
+        'HTTP Requests': data.metrics.http_reqs.count,
+        'Successful Checks (%)': (data.metrics.checks.rate * 100).toFixed(2),
+        'Failed Requests (%)': (data.metrics.http_req_failed.rate * 100).toFixed(2),
+        'Avg Response Time (ms)': data.metrics.http_req_duration.avg.toFixed(2),
+        'Median Response Time (ms)': data.metrics.http_req_duration.med.toFixed(2),
+        'Max Response Time (ms)': data.metrics.http_req_duration.max.toFixed(2),
+        'p95 Response Time (ms)': data.metrics.http_req_duration['p(95)'].toFixed(2),
+        'p99 Response Time (ms)': data.metrics.http_req_duration['p(99)'].toFixed(2),
+    });
+
+    return {};
+}
