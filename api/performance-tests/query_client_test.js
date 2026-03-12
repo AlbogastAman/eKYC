@@ -25,7 +25,7 @@ export default function () {
     console.log("####splittedId ", splittedId)
     // 3. Define fields to query (matches your API signature)
     const fields = ['name', 'address'];
-    const url = `${BASE_URL}/fi/getClientData?clientId=did:fabric:${splittedId[0]}&fields=${fields}`;
+    const url = `${BASE_URL}/fi/getClientData?clientId=${splittedId[0]}&fields=${fields}`;
     console.log("####url ", url)
     const params = {
         headers: {
