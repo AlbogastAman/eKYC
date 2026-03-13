@@ -14,7 +14,7 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
     async submitTransaction() {
         // Targeted Logic: Always look for the first asset of the first worker.
         // Formula: (Worker 0 * 100,000) + 1 = 1
-        const anchorDID = `did:fabric:usr_${this.runID}_1`;
+        const anchorDID = `did:fabric:u1_${this.runID}_1`;
 
         return this.sutAdapter.sendRequests({
             contractId: 'eKYC',
