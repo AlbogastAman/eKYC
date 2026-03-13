@@ -1,5 +1,6 @@
 'use strict';
-
+const fs = require('fs');
+const path = require('path');
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
 
 class GetClientDataWorkload extends WorkloadModuleBase {
@@ -22,18 +23,29 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         // 3. Sharding Logic (Must match createClient.js)
         this.laneSize = 100000;
         this.assetsPerWorker = Math.floor(this.totalAssets / this.totalWorkers);
+
+        const filePath = path.join(__dirname, 'dids.json');
+        const rawData = fs.readFileSync(filePath);
+        const jsonData = JSON.parse(rawData);
+
+        this.didList = jsonData;
     }
 
     async submitTransaction() {
         this.txIndex++;
 
         // 4. Randomized Read Logic
-        const randomWorkerLane = Math.floor(Math.random() * this.totalWorkers);
-        const randomIndexInLane = Math.floor(Math.random() * this.assetsPerWorker) + 1;
+        // const randomWorkerLane = Math.floor(Math.random() * this.totalWorkers);
+        // const randomIndexInLane = Math.floor(Math.random() * this.assetsPerWorker) + 1;
 
-        // Construct the DID: did:fabric:usr_[Seed]_[GlobalIndex]
-        const globalUniqueIndex = (randomWorkerLane * this.laneSize) + randomIndexInLane;
-        const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
+        // // Construct the DID: did:fabric:usr_[Seed]_[GlobalIndex]
+        // const globalUniqueIndex = (randomWorkerLane * this.laneSize) + randomIndexInLane;
+        // const did = `did:fabric:usr_${this.runID}_${globalUniqueIndex}`;
+
+        const randomIndex = Math.floor(Math.random() * this.didList.length);
+        const did = this.didList[randomIndex];
+        const splittedDid = did.split('@');
+
         const fields = "name,address";
 
         // 5. Query Execution
@@ -41,8 +53,8 @@ class GetClientDataWorkload extends WorkloadModuleBase {
         const request = {
             contractId: 'eKYC',
             contractFunction: 'getClientData',
-            invokerIdentity: this.invoker, // Targeted Org2 Identity
-            contractArguments: [did, fields],
+            invokerIdentity: splittedDid[1], // Targeted Org2 Identity
+            contractArguments: [splittedDid[0], fields],
             readOnly: true
         };
 
