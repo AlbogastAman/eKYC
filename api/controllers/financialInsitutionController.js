@@ -13,17 +13,17 @@ const anchorCache = new NodeCache({ stdTTL: 300 }); // Cache ledger results for 
 
 //const snarkjs = require('snarkjs');
 
-const fs = require('fs');
+//const fs = require('fs');
 const path = require('path');
 
 // --- 1. OPTIMIZATION: LOAD STATIC ASSETS AT STARTUP ---
 // Never read files inside the request handler. This saves ~50-200ms per hit.
-const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
-const vKey = JSON.parse(fs.readFileSync(vKeyPath));
+// const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
+// const vKey = JSON.parse(fs.readFileSync(vKeyPath));
 
-// Business Logic Constants
-const CURRENT_THRESHOLD = process.env.DOB_THRESHOLD || "20080217";
-const TARGET_COUNTRY = process.env.TARGET_COUNTRY || "834";
+// // Business Logic Constants
+// const CURRENT_THRESHOLD = process.env.DOB_THRESHOLD || "20080217";
+// const TARGET_COUNTRY = process.env.TARGET_COUNTRY || "834";
 
 
 exports.createClient = async (req, res) => {
@@ -125,7 +125,7 @@ exports.verifyUserVC = async (req, res) => {
         // 2. Offload ZK Math to Worker Thread (Prevents Event Loop Lag)
         const zkResult = await new Promise((resolve, reject) => {
             const worker = new Worker(path.join(__dirname, '../zkWorker.js'), {
-                workerData: { vKey, publicSignals, proof }
+                workerData: { publicSignals, proof }
             });
             worker.on('message', resolve);
             worker.on('error', reject);
