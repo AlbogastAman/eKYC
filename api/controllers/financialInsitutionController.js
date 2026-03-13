@@ -9,10 +9,8 @@ const crypto = require('node:crypto');
 const { verifyJWT } = require('did-jwt');
 const NodeCache = require('node-cache');
 const anchorCache = new NodeCache({ stdTTL: 300 }); // Cache ledger results for 5 mins
-
-//const snarkjs = require('snarkjs');
-
-//const fs = require('fs');
+const snarkjs = require('snarkjs');
+const fs = require('fs');
 const path = require('path');
 
 //--- 1. OPTIMIZATION: LOAD STATIC ASSETS AT STARTUP ---
