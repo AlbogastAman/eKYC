@@ -2,8 +2,8 @@ export const BASE_URL = 'http://35.239.83.149:5000';
 
 export const options = {
     stages: [
-        { duration: '1m', target: 10 },
-        { duration: '3m', target: 30 },
+        { duration: '1m', target: 20 },
+        { duration: '3m', target: 50 },
         { duration: '1m', target: 0 },
     ],
     thresholds: {
