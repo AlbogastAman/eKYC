@@ -8,13 +8,16 @@ const { createVC, getIssuerKeys, createFabricResolver } = require('../utils/vcSe
 const crypto = require('node:crypto');
 const { verifyJWT } = require('did-jwt');
 const NodeCache = require('node-cache');
-const anchorCache = new NodeCache({ stdTTL: 300 }); // Cache ledger results for 5 mins
+
 const snarkjs = require('snarkjs');
 const fs = require('fs');
 const path = require('path');
 
-//--- 1. OPTIMIZATION: LOAD STATIC ASSETS AT STARTUP ---
-//Never read files inside the request handler. This saves ~50-200ms per hit.
+//Caches
+const anchorCache = new NodeCache({ stdTTL: 300 });
+const clientCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+
+// Load key
 const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
 const vKey = JSON.parse(fs.readFileSync(vKeyPath));
 
@@ -109,9 +112,9 @@ exports.verifyUserVC = async (req, res) => {
     const resolver = createFabricResolver(orgNumber, ledgerUser);
 
     try {
-        // 1. Parallelize JWT and Ledger (with Caching)
+        // --- Parallelize JWT and Ledger (with Caching) ---
         const cachedAnchor = anchorCache.get(userDid);
-        // --- 2. OPTIMIZATION: PARALLEL EXECUTION ---
+
         const [verifiedVC, anchorBuffer] = await Promise.all([
             verifyJWT(vc, { resolver }),
             cachedAnchor ? Promise.resolve(cachedAnchor) : networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid])
@@ -120,7 +123,6 @@ exports.verifyUserVC = async (req, res) => {
         const anchorParsed = JSON.parse(anchorBuffer.toString());
         const vcPayload = verifiedVC.payload.vc;
 
-        // --- 3. CRYPTOGRAPHIC CHECKS (Local CPU - Extremely Fast) ---
         const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
 
         if (anchorParsed.hash !== vcHash) {
@@ -131,10 +133,10 @@ exports.verifyUserVC = async (req, res) => {
             return res.status(401).json({ error: "Credential has been revoked" });
         }
 
-        // --- 4. ZK-PROOF LOGIC CHECKS ---
+        // --- ZKP logic checks ---
         const vcHashes = vcPayload.credentialSubject.zkProofs;
 
-        // Strict Comparison
+        //  --- Strict Comparison  ---
         const hashesMatch = (
             publicSignals[0] === vcHashes.dateOfBirthHash &&
             publicSignals[1] === vcHashes.idNumberHash &&
@@ -145,21 +147,18 @@ exports.verifyUserVC = async (req, res) => {
             return res.status(401).json({ error: "Proof doesn't match VC commitments" });
         }
 
-        // Check criteria (DOB/Country)
+        // --- Check criteria (DOB/Country) ---
         if (publicSignals[3] !== CURRENT_THRESHOLD || publicSignals[4] !== TARGET_COUNTRY) {
             return res.status(401).json({ error: "Proof used incorrect criteria" });
         }
 
-        // --- 5. MATHEMATICAL VERIFICATION ---
-        // Using the pre-loaded vKey saves significant overhead
+        // --- Proof verification ---
         const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
         if (!isValid) {
             return res.status(401).json({ error: "Violation of eKYC requirements" });
         }
 
-        // --- 6. NON-BLOCKING POST-PROCESSING ---
-        // If the user doesn't need to wait for the FI approval to finish, 
-        // don't 'await' it, or move it to a background worker.
+        // -- Save Data access request ---
         io.fiApprovalRequest(ledgerUser, userDid).catch(e => console.error("FI Approval Background Error:", e));
 
         return res.status(200).json({
@@ -170,7 +169,6 @@ exports.verifyUserVC = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Verification Error:', err);
         return res.status(401).json({
             error: "Verification failed",
             details: err.message
@@ -224,24 +222,69 @@ exports.getFiData = (req, res) => {
         });
 };
 
-exports.getClientData = (req, res) => {
+// exports.getClientData = (req, res) => {
 
+//     const { clientId, fields } = req.query;
+
+//     networkConnection
+//         .evaluateTransaction('getClientData', req.orgNum, req.ledgerUser, [clientId, fields || []])
+//         .then(result => {
+//             if (result) {
+//                 if (result.length > 0) {
+//                     return res.json({ clientData: JSON.parse(result.toString()) });
+//                 }
+//                 return res.json({ clientData: result.toString() });
+//             }
+//             return res.status(500).json({ error: 'Something went wrong' });
+//         })
+//         .catch((err) => {
+//             return res.status(500).json({ error: `Something went wrong\n ${err}` });
+//         });
+// };
+
+
+exports.getClientData = async (req, res) => {
     const { clientId, fields } = req.query;
+    const { orgNum, ledgerUser } = req;
 
-    networkConnection
-        .evaluateTransaction('getClientData', req.orgNum, req.ledgerUser, [clientId, fields || []])
-        .then(result => {
-            if (result) {
-                if (result.length > 0) {
-                    return res.json({ clientData: JSON.parse(result.toString()) });
-                }
-                return res.json({ clientData: result.toString() });
-            }
-            return res.status(500).json({ error: 'Something went wrong' });
-        })
-        .catch((err) => {
-            return res.status(500).json({ error: `Something went wrong\n ${err}` });
+    // 1. Cache Lookup (The ultimate latency killer)
+    const cacheKey = `${clientId}_${fields || 'all'}`;
+    const cachedData = clientCache.get(cacheKey);
+
+    if (cachedData) {
+        return res.json({ clientData: cachedData, source: 'cache' });
+    }
+
+    try {
+        // 2. Ledger Query (Optimized call)
+        const result = await networkConnection.evaluateTransaction(
+            'getClientData', 
+            orgNum, 
+            ledgerUser, 
+            [clientId, fields || ""]
+        );
+
+        if (!result || result.length === 0) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // 3. Efficient Parsing
+        const parsedData = JSON.parse(result.toString());
+
+        // 4. Store in Cache before responding
+        clientCache.set(cacheKey, parsedData);
+
+        return res.json({ 
+            clientData: parsedData,
+            source: 'ledger'
         });
+
+    } catch (err) {
+        return res.status(500).json({ 
+            error: 'Failed to retrieve client data from ledger',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+        });
+    }
 };
 
 exports.getApprovedClients = async (req, res) => {

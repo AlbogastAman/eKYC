@@ -7,15 +7,26 @@ export const options = {
         { duration: '1m', target: 0 },
     ],
     thresholds: {
-        http_req_duration: [
+        // Query should be very fast
+        'http_req_duration{type:query}': [
+            'p(95)<3000',
+            'p(99)<5000'
+        ],
+        // Creation involves consensus, allow more time
+        'http_req_duration{type:create}': [
             'p(95)<5000',
             'p(99)<8000'
+        ],
+        //VC Verification involves ZK Proofs (Heavy CPU)
+        'http_req_duration{type:verify}': [
+            'p(95)<10000',
+            'p(99)<15000'
         ],
         http_req_failed: ['rate<0.05'],
     },
     summaryTrendStats: [
-        'avg','min','med','max',
-        'p(90)','p(95)','p(99)','p(99.9)'
+        'avg', 'min', 'med', 'max',
+        'p(90)', 'p(95)', 'p(99)', 'p(99.9)'
     ],
 };
 

@@ -26,6 +26,7 @@ export default function () {
             'Content-Type': 'application/x-www-form-urlencoded',
             "Cookie": randomFI.cookie
         },
+        tags: { type: 'create' }
     };
 
     const res = http.post(url, payload, params);

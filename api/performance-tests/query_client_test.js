@@ -30,6 +30,7 @@ export default function () {
             "Cookie": FI_COOKIES.find(x => x.name === splittedId[1]).cookie,
             "Accept": "application/json"
         },
+        tags: { type: 'query' }
     };
 
     const res = http.get(url, params);

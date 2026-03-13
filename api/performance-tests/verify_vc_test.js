@@ -24,6 +24,7 @@ export default function () {
             'Content-Type': 'application/json',
             'Cookie': randomFI.cookie
         },
+        tags: { type: 'verify' }
     };
 
     const res = http.post(url, payload, params);
