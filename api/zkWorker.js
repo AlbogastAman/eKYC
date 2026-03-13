@@ -42,6 +42,7 @@ async function verifyProof() {
         parentPort.postMessage({ isValid });
 
     } catch (error) {
+        console.log("####nafika### ",error)
         parentPort.postMessage({ 
             isValid: false, 
             error: error.message 
