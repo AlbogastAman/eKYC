@@ -112,11 +112,9 @@ exports.verifyUserVC = async (req, res) => {
         // 1. Parallelize JWT and Ledger (with Caching)
         const cachedAnchor = anchorCache.get(userDid);
         // --- 2. OPTIMIZATION: PARALLEL EXECUTION ---
-        // Verify the JWT (Network/CPU) and Fetch the Anchor (Network) at the same time.
-        // This cuts your "Wait Time" in half.
         const [verifiedVC, anchorBuffer] = await Promise.all([
             verifyJWT(vc, { resolver }),
-            cachedAnchor ? Promise.resolve(cachedAnchor) : networkConnection.evaluateTransaction('readAnchor', orgNum, ledgerUser, [userDid])
+            cachedAnchor ? Promise.resolve(cachedAnchor) : networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid])
         ]);
 
         const anchorParsed = JSON.parse(anchorBuffer.toString());
