@@ -25,86 +25,6 @@ const vKey = JSON.parse(fs.readFileSync(vKeyPath));
 const CURRENT_THRESHOLD = process.env.DOB_THRESHOLD || "20080217";
 const TARGET_COUNTRY = process.env.TARGET_COUNTRY || "834";
 
-
-// exports.createClient = async (req, res) => {
-//     const { login, password, name, dateOfBirth, address, country, idNumber } = req.body;
-//     const { orgNum, ledgerUser } = req;
-//     try {
-//         const userDID = `did:fabric:ekyc:${login}`;
-//         //All Non-PII to be shared on ledger
-//         const clientData = JSON.stringify({ "did": userDID, name, address, whoRegistered: { orgNum, ledgerUser } });
-
-//         // 1. Enhanced Key Retrieval (Using real Fabric identity)
-//         const issuerKeys = await getIssuerKeys(`org${orgNum}`);
-
-//         // 2. Generate Salts for each attribute (Vital for ZKP)
-//         // These salts MUST be saved in your local DB so the user can generate proofs later!
-//         const salts = {
-//             idNumber: crypto.randomBytes(16).toString('hex'),
-//             dateOfBirth: crypto.randomBytes(16).toString('hex'),
-//             country: crypto.randomBytes(16).toString('hex')
-//         };
-
-//         // 3. Build the VC with "Blindable" Claims
-//         const vcResult = await createVC({
-//             id: userDID,
-//             claims: {
-//                 name,
-//                 address,
-//                 // We keep these for the VC, but the ZKP will use the salted versions
-//                 dateOfBirth,
-//                 idNumber,
-//                 country,
-//             },
-//             issuer: issuerKeys.issuerDid,
-//             keys: issuerKeys,
-//             salts, // Include salts in the VC metadata
-//         });
-//         // 4. Create the Commitment
-//         // Instead of hashing the whole VC, we hash the signature or a Merkle Root
-//         const credentialCommitment = crypto.createHash('sha256')
-//             .update(vcResult.jwt)
-//             .digest('hex');
-
-//         // 5. Submit to Ledger
-//         const ledgerResponse = await networkConnection.submitTransaction(
-//             'createClient',
-//             orgNum,
-//             ledgerUser,
-//             [clientData, credentialCommitment]
-//         );
-
-//         // 6. Save locally (Including the salts!)
-//         // If you lose the salts, you can never generate a ZKP again.
-//         const dbMetadata = {
-//             orgNum,
-//             ledgerUser,
-//             accountStatus: 'ACTIVE'
-//         };
-//         await io.clientCreate(
-//             login,
-//             password,
-//             userDID,
-//             JSON.stringify(dbMetadata)
-//         );
-
-//         // 7. Return the "Keys to the Kingdom" to the User
-//         // The user is now the sole owner of their salts and signed credential.
-//         return res.json({
-//             message: `Verifiable Credential issued. Please save your salts securely.`,
-//             txId: ledgerResponse.toString(),
-//             did: userDID,
-//             vc: vcResult.jwt, // The signed JWT
-//             salts: salts,      // THE USER MUST STORE THESE LOCALLY
-//             rawClaims: { name, dateOfBirth, address, country, idNumber }
-//         });
-
-//     } catch (err) {
-//         console.error(err);
-//         return res.status(500).json({ error: `Issuance failed: ${err.message}` });
-//     }
-// };
-
 exports.createClient = async (req, res) => {
     const { login, password, name, dateOfBirth, address, country, idNumber } = req.body;
     const { orgNum, ledgerUser } = req;
@@ -112,8 +32,7 @@ exports.createClient = async (req, res) => {
     try {
         const userDID = `did:fabric:ekyc:${login}`;
 
-        // 1. PARALLEL PREPARATION: Crypto & Keys
-        // Fetch keys and generate salts while creating the data string
+        // Crypto & Keys
         const [issuerKeys, salts] = await Promise.all([
             getIssuerKeys(`org${orgNum}`),
             {
@@ -123,7 +42,7 @@ exports.createClient = async (req, res) => {
             }
         ]);
 
-        // 2. GENERATE VC (CPU Intensive)
+        // Generate VC
         const vcResult = await createVC({
             id: userDID,
             claims: { name, address, dateOfBirth, idNumber, country },
@@ -143,8 +62,7 @@ exports.createClient = async (req, res) => {
             whoRegistered: { orgNum, ledgerUser }
         });
 
-        // 3. PARALLEL EXECUTION: Ledger Write + Local DB Save
-        // We trigger both "I/O" tasks at once.
+        // Ledger Write + Local DB Save
         const dbMetadata = JSON.stringify({ orgNum, ledgerUser, accountStatus: 'ACTIVE' });
 
         const [ledgerResponse] = await Promise.all([
@@ -157,8 +75,7 @@ exports.createClient = async (req, res) => {
             io.clientCreate(login, password, userDID, dbMetadata)
         ]);
 
-        // 4. CACHE WARMING
-        // Pre-fill the cache so the subsequent "getClientData" query is instant (0ms)
+        // Caching
         const cacheKey = `${userDID}_all`;
         clientCache.set(cacheKey, { did: userDID, name, address });
 
