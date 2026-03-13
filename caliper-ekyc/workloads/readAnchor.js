@@ -8,20 +8,20 @@ class ReadAnchorWorkload extends WorkloadModuleBase {
 
         this.runID = this.roundArguments.seed || 'FINAL_01';
         // We use FI1 because they are the owner who just created the data
-        this.invoker = '_Org2MSP_FI2'; 
+        this.invoker = '_Org2MSP_FI2';
     }
 
     async submitTransaction() {
         // Targeted Logic: Always look for the first asset of the first worker.
         // Formula: (Worker 0 * 100,000) + 1 = 1
-        const anchorDID = `did:fabric:u1_${this.runID}_1`;
+        const anchorDID = `did:fabric:u11_${this.runID}_1`;
 
         return this.sutAdapter.sendRequests({
             contractId: 'eKYC',
             contractFunction: 'readAnchor',
             invokerIdentity: this.invoker,
             contractArguments: [anchorDID],
-            readOnly: true 
+            readOnly: true
         });
     }
 }
