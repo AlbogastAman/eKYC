@@ -7,7 +7,11 @@ const networkConnection = require('../utils/networkConnection');
 const { createVC, getIssuerKeys, createFabricResolver } = require('../utils/vcService');
 const crypto = require('node:crypto');
 const { verifyJWT } = require('did-jwt');
-const snarkjs = require('snarkjs');
+const { Worker } = require('node:worker_threads');
+const NodeCache = require('node-cache');
+const anchorCache = new NodeCache({ stdTTL: 300 }); // Cache ledger results for 5 mins
+
+//const snarkjs = require('snarkjs');
 
 const fs = require('fs');
 const path = require('path');
@@ -101,25 +105,73 @@ exports.createClient = async (req, res) => {
     }
 };
 
+
+exports.verifyUserVC = async (req, res) => {
+    const { vc, userDid, proof, publicSignals } = req.body;
+    const { orgNum, ledgerUser } = req;
+
+    try {
+        // 1. Parallelize JWT and Ledger (with Caching)
+        const cachedAnchor = anchorCache.get(userDid);
+
+        const [verifiedVC, anchorBuffer] = await Promise.all([
+            verifyJWT(vc, { resolver: createFabricResolver(orgNum, ledgerUser) }),
+            cachedAnchor ? Promise.resolve(cachedAnchor) : networkConnection.evaluateTransaction('readAnchor', orgNum, ledgerUser, [userDid])
+        ]);
+
+        if (!cachedAnchor) anchorCache.set(userDid, anchorBuffer);
+        const anchorParsed = JSON.parse(anchorBuffer.toString());
+
+        // 2. Offload ZK Math to Worker Thread (Prevents Event Loop Lag)
+        const zkResult = await new Promise((resolve, reject) => {
+            const worker = new Worker(path.join(__dirname, '../zkWorker.js'), {
+                workerData: { vKey, publicSignals, proof }
+            });
+            worker.on('message', resolve);
+            worker.on('error', reject);
+            worker.on('exit', (code) => { if (code !== 0) reject(new Error(`Worker stopped code ${code}`)); });
+        });
+
+        if (!zkResult.isValid) return res.status(401).json({ error: "ZK Proof Invalid" });
+
+        // 3. Fast local checks
+        const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
+        if (anchorParsed.hash !== vcHash) return res.status(401).json({ error: "Tampered" });
+
+        // 4. Background external calls (DON'T AWAIT)
+        setImmediate(() => {
+            io.fiApprovalRequest(ledgerUser, userDid).catch(console.error);
+        });
+
+        return res.status(200).json({ verified: true });
+
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+
 // exports.verifyUserVC = async (req, res) => {
 //     const { vc, userDid, proof, publicSignals } = req.body;
-//     let orgNumber = req.orgNum;
-//     let ledgerUser = req.ledgerUser;
+//     const { orgNum: orgNumber, ledgerUser } = req;
+
 //     const resolver = createFabricResolver(orgNumber, ledgerUser);
 
 //     try {
+//         // --- 2. OPTIMIZATION: PARALLEL EXECUTION ---
+//         // Verify the JWT (Network/CPU) and Fetch the Anchor (Network) at the same time.
+//         // This cuts your "Wait Time" in half.
+//         const [verifiedVC, anchorBuffer] = await Promise.all([
+//             verifyJWT(vc, { resolver }),
+//             networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid])
+//         ]);
 
-//         // 1. Cryptographic Check using did-jwt
-//         // This automatically calls the resolver, fetches the key, and checks the signature
-//         const verifiedVC = await verifyJWT(vc, { resolver });
+//         const anchorParsed = JSON.parse(anchorBuffer.toString());
+//         const vcPayload = verifiedVC.payload.vc;
 
-//         // 2. Ledger Anchoring Check
-//         // We hash the incoming VC string to compare it with the proof on the ledger
+//         // --- 3. CRYPTOGRAPHIC CHECKS (Local CPU - Extremely Fast) ---
 //         const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
-//         // Query your existing anchor login
-//         const anchor = await networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid]);
 
-//         let anchorParsed = JSON.parse(anchor.toString());
 //         if (anchorParsed.hash !== vcHash) {
 //             return res.status(401).json({ error: "VC content does not match ledger anchor (Tampered)" });
 //         }
@@ -128,133 +180,52 @@ exports.createClient = async (req, res) => {
 //             return res.status(401).json({ error: "Credential has been revoked" });
 //         }
 
-//         //ZK Proofs - Check requirements
+//         // --- 4. ZK-PROOF LOGIC CHECKS ---
+//         const vcHashes = vcPayload.credentialSubject.zkProofs;
 
-//         //1. Cross-check against your Verified VC
-//         const vcHashes = verifiedVC.payload.vc.credentialSubject.zkProofs;
+//         // Strict Comparison
 //         const hashesMatch = (
 //             publicSignals[0] === vcHashes.dateOfBirthHash &&
 //             publicSignals[1] === vcHashes.idNumberHash &&
 //             publicSignals[2] === vcHashes.countryHash
 //         );
 
-//         if (!hashesMatch) return res.status(401).json({ error: "Proof doesn't match VC commitments" });
+//         if (!hashesMatch) {
+//             return res.status(401).json({ error: "Proof doesn't match VC commitments" });
+//         }
 
-//         //https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
-//         // 2. Cross-check against your business requirements 
-//         const currentThreshold = process.env.DOB_THRESHOLD || "20080217"; // Age 18 check
-//         const targetCountry = process.env.TARGET_COUNTRY || "834";         // e.g. Tanzania
-
-//         if (publicSignals[3] !== currentThreshold || publicSignals[4] !== targetCountry) {
+//         // Check criteria (DOB/Country)
+//         if (publicSignals[3] !== CURRENT_THRESHOLD || publicSignals[4] !== TARGET_COUNTRY) {
 //             return res.status(401).json({ error: "Proof used incorrect criteria" });
 //         }
 
-//         // 3. Mathematical check
-
-//         // Load the Verification Key ONCE at startup to save resources
-//         const vKeyPath = path.join(__dirname, "../build/requirements_check_key.json");
-
-//         const vKey = JSON.parse(fs.readFileSync(vKeyPath));
-
+//         // --- 5. MATHEMATICAL VERIFICATION ---
+//         // Using the pre-loaded vKey saves significant overhead
 //         const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
 //         if (!isValid) {
 //             return res.status(401).json({ error: "Violation of eKYC requirements" });
 //         }
 
-//         //Approve relation: FI to Client
-//         let response = await io.fiApprovalRequest(
-//             ledgerUser, userDid
-//         );
+//         // --- 6. NON-BLOCKING POST-PROCESSING ---
+//         // If the user doesn't need to wait for the FI approval to finish, 
+//         // don't 'await' it, or move it to a background worker.
+//         io.fiApprovalRequest(ledgerUser, userDid).catch(e => console.error("FI Approval Background Error:", e));
 
-//         res.status(200).json({
+//         return res.status(200).json({
 //             message: "Verification Successful",
 //             issuer: verifiedVC.issuer,
-//             claims: verifiedVC.payload.vc.credentialSubject,
+//             claims: vcPayload.credentialSubject,
 //             verified: true,
 //         });
 
 //     } catch (err) {
 //         console.error('Verification Error:', err);
-//         res.status(401).json({ error: "Invalid Signature or DID resolution failed" });
+//         return res.status(401).json({ 
+//             error: "Verification failed", 
+//             details: err.message 
+//         });
 //     }
 // };
-
-
-exports.verifyUserVC = async (req, res) => {
-    const { vc, userDid, proof, publicSignals } = req.body;
-    const { orgNum: orgNumber, ledgerUser } = req;
-    
-    const resolver = createFabricResolver(orgNumber, ledgerUser);
-
-    try {
-        // --- 2. OPTIMIZATION: PARALLEL EXECUTION ---
-        // Verify the JWT (Network/CPU) and Fetch the Anchor (Network) at the same time.
-        // This cuts your "Wait Time" in half.
-        const [verifiedVC, anchorBuffer] = await Promise.all([
-            verifyJWT(vc, { resolver }),
-            networkConnection.evaluateTransaction('readAnchor', orgNumber, ledgerUser, [userDid])
-        ]);
-
-        const anchorParsed = JSON.parse(anchorBuffer.toString());
-        const vcPayload = verifiedVC.payload.vc;
-
-        // --- 3. CRYPTOGRAPHIC CHECKS (Local CPU - Extremely Fast) ---
-        const vcHash = crypto.createHash('sha256').update(vc).digest('hex');
-        
-        if (anchorParsed.hash !== vcHash) {
-            return res.status(401).json({ error: "VC content does not match ledger anchor (Tampered)" });
-        }
-
-        if (anchorParsed.status !== 'VALID') {
-            return res.status(401).json({ error: "Credential has been revoked" });
-        }
-
-        // --- 4. ZK-PROOF LOGIC CHECKS ---
-        const vcHashes = vcPayload.credentialSubject.zkProofs;
-        
-        // Strict Comparison
-        const hashesMatch = (
-            publicSignals[0] === vcHashes.dateOfBirthHash &&
-            publicSignals[1] === vcHashes.idNumberHash &&
-            publicSignals[2] === vcHashes.countryHash
-        );
-
-        if (!hashesMatch) {
-            return res.status(401).json({ error: "Proof doesn't match VC commitments" });
-        }
-
-        // Check criteria (DOB/Country)
-        if (publicSignals[3] !== CURRENT_THRESHOLD || publicSignals[4] !== TARGET_COUNTRY) {
-            return res.status(401).json({ error: "Proof used incorrect criteria" });
-        }
-
-        // --- 5. MATHEMATICAL VERIFICATION ---
-        // Using the pre-loaded vKey saves significant overhead
-        const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
-        if (!isValid) {
-            return res.status(401).json({ error: "Violation of eKYC requirements" });
-        }
-
-        // --- 6. NON-BLOCKING POST-PROCESSING ---
-        // If the user doesn't need to wait for the FI approval to finish, 
-        // don't 'await' it, or move it to a background worker.
-        io.fiApprovalRequest(ledgerUser, userDid).catch(e => console.error("FI Approval Background Error:", e));
-
-        return res.status(200).json({
-            message: "Verification Successful",
-            issuer: verifiedVC.issuer,
-            claims: vcPayload.credentialSubject,
-            verified: true,
-        });
-
-    } catch (err) {
-        console.error('Verification Error:', err);
-        return res.status(401).json({ 
-            error: "Verification failed", 
-            details: err.message 
-        });
-    }
-};
 
 exports.login = async (req, res) => {
 
