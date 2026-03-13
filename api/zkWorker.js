@@ -1,4 +1,4 @@
-const { parentPort, workerData } = require('worker_threads');
+const { parentPort, workerData } = require('node:worker_threads');
 const snarkjs = require('snarkjs');
 const fs = require('fs');
 const path = require('path');
