@@ -1,0 +1,81 @@
+test:
+  name: eKYC-Benchmark
+  description: Testing Client Creation,FI Approval, and Authorized Access to KYC data
+
+  workers:
+    type: local
+    number: 2 # Reduced to 2 to leave CPU for Docker containers
+
+  options:
+    test:
+      transactionFailureThreshold: 20 # Allow some jitter during stress
+    monitoring:
+      type: ["docker"]
+      docker:
+        # Note: Ensure these names match 'docker ps' exactly
+        containers:
+          [
+            "peer0.org1.example.com",
+            "peer0.org2.example.com",
+            "orderer.example.com",
+            "couchdb0",
+            "couchdb1",
+          ]
+      interval: 5 # Increased to 5s to reduce monitoring overhead
+
+  rounds:
+    - label: "Step 1: Client Creation"
+      txNumber: 1500
+      rateControl:
+        type: fixed-rate
+        opts: { tps: 10 }
+      workload:
+        module: workloads/createClient.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
+
+    - label: "Cooldown-Sync"
+      txDuration: 60 # Increased to 60s to let CouchDB finish indexing Step 1
+      rateControl: { type: fixed-rate, opts: { tps: 1 } }
+      workload:
+        module: workloads/readAnchor.js
+        arguments: { seed: "FINAL_01", totalAssets: 1500 }
+
+    - label: "Step 2: FI Approval"
+      txNumber: 1000
+      rateControl:
+        type: fixed-rate
+        opts: { tps: 8 }
+      workload:
+        module: workloads/approve.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
+
+    - label: "Step 3: FI2 Get client data"
+      txDuration: 120
+      rateControl:
+        type: linear-rate
+        opts:
+          startingTps: 10
+          finishingTps: 25 # Capped at 25 to avoid 'ENHANCE_YOUR_CALM' errors
+      workload:
+        module: workloads/getClientData.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500
+          invoker: "_Org2MSP_FI2"
+
+    - label: "Step 4: Mixed Stress Test"
+      txNumber: 3000
+      rateControl:
+        type: fixed-feedback-rate
+        opts:
+          tps: 30 # The target speed
+          unfinishedTransactionThreshold: 100 # The "Safety Brake"
+      workload:
+        module: workloads/mixedWorkload.js
+        arguments:
+          seed: "FINAL_01"
+          totalAssets: 1500

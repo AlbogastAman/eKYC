@@ -1,7 +1,7 @@
 const { Contract } = require('fabric-contract-api');
 const ClientIdentity = require('fabric-shim').ClientIdentity;
 
-const initialClientData = require('../data/initialClientData.json');
+//const initialClientData = require('../data/initialClientData.json');
 const initialFIData = require('../data/initialFIData.json');
 
 class eKYC extends Contract {
@@ -19,24 +19,25 @@ class eKYC extends Contract {
      */
     async initLedger(ctx) {
         console.info('============= START : Initialize Ledger ===========');
-        const clients = initialClientData;
+        // const clients = initialClientData;
         const fis = initialFIData;
 
-        for (const client of clients) {
-            const newClientId = 'CLIENT' + this.nextClientId;
-            const whoRegistered = client.whoRegistered.ledgerUser;
+        //To be added by fi using a frontend app
+        // for (const client of clients) {
+        //     const newClientId = 'CLIENT' + this.nextClientId;
+        //     const whoRegistered = client.whoRegistered.ledgerUser;
 
-            client.docType = 'client';
-            await ctx.stub.putState(newClientId, Buffer.from(JSON.stringify(client)));
-            console.info('Added <--> ', client);
-            this.nextClientId++;
+        //     client.docType = 'client';
+        //     await ctx.stub.putState(newClientId, Buffer.from(JSON.stringify(client)));
+        //     console.info('Added <--> ', client);
+        //     this.nextClientId++;
 
-            // Include who registered the client in the list of FI approved
-            const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [newClientId, whoRegistered]);
-            const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [whoRegistered, newClientId]);
-            await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
-            await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
-        }
+        //     // Include who registered the client in the list of FI approved
+        //     const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [newClientId, whoRegistered]);
+        //     const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [whoRegistered, newClientId]);
+        //     await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
+        //     await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
+        // }
 
         for (const fi of fis) {
             fi.docType = 'fi';
@@ -71,7 +72,7 @@ class eKYC extends Contract {
      * @returns {boolean} is who registered or not, return null if client does not exists or does not have data
      */
     async isWhoRegistered(ctx, clientId) {
-        const clientAsBytes = await ctx.stub.getState(clientId);
+        const clientAsBytes = await ctx.stub.getState(`data:${clientId}`);
         if (!clientAsBytes || clientAsBytes.length === 0) {
             return null;
         }
@@ -82,41 +83,60 @@ class eKYC extends Contract {
     }
 
     /**
-     *
      * @param {Context} ctx
      * @param {object} clientData
-     * @dev create a new client
-     * @returns {string} new client ID
+     * @param {string} credentialHash - The SHA256 hash of the VC
      */
-    async createClient(ctx, clientData) {
-        console.info('============= START : Create client ===========');
-
+    async createClient(ctx, clientData, credentialHash) {
+        console.info('============= START : Anchor Credential ===========');
         clientData = JSON.parse(clientData);
         const callerId = this.getCallerId(ctx);
 
         if (clientData.whoRegistered.ledgerUser !== callerId) {
-            return null;
+            throw new Error('Unauthorized: Caller mismatch');
         }
+
+        const existing = await ctx.stub.getState(clientData.did);
+        if (existing && existing.length > 0) {
+            throw new Error('Client already exists');
+        }
+        // Security check: Ensure the caller is authorized
+        // (You can add logic here to check if callerId belongs to a verified FI)
+
+        // Get the deterministic timestamp from the transaction context
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        const createdAt = new Date(txTimestamp.seconds * 1000).toISOString();
+
+        const anchor = {
+            docType: 'credentialAnchor',
+            did: clientData.did,
+            hash: credentialHash, // Only the proof, no PII
+            issuer: callerId,
+            status: 'VALID',
+            createdAt: createdAt
+        };
+
+        // Store the anchor using the DID as the key
+        await ctx.stub.putState(clientData.did, Buffer.from(JSON.stringify(anchor)));
+
+        // Maintain your composite keys so FIs can still see which clients they registered
+        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [clientData.did, callerId]);
+        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, clientData.did]);
+
+        await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
+        await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
 
         const client = {
             docType: 'client',
             ...clientData
         };
 
-        const newId = 'CLIENT' + this.nextClientId;
-        this.nextClientId++;
+        // Store the non-pii using the DID as the key
+        await ctx.stub.putState(`data:${clientData.did}`, Buffer.from(JSON.stringify(client)));
 
-        await ctx.stub.putState(newId, Buffer.from(JSON.stringify(client)));
+        console.info('============= END : Anchor Credential ===========');
 
-        // Include who registered the client in the list of FI approved
-        const clientFiIndexKey = await ctx.stub.createCompositeKey('clientId~fiId', [newId, callerId]);
-        const fiClientIndexKey = await ctx.stub.createCompositeKey('fiId~clientId', [callerId, newId]);
-        await ctx.stub.putState(clientFiIndexKey, Buffer.from('\u0000'));
-        await ctx.stub.putState(fiClientIndexKey, Buffer.from('\u0000'));
-
-        console.info('============= END : Create client ===========');
-
-        return newId;
+        return clientData.did;
     }
 
     /**
@@ -129,7 +149,7 @@ class eKYC extends Contract {
      */
     async getClientData(ctx, clientId, fields) {
 
-        const clientAsBytes = await ctx.stub.getState(clientId);
+        const clientAsBytes = await ctx.stub.getState(`data:${clientId}`);
         if (!clientAsBytes || clientAsBytes.length === 0) {
             return null;
         }
@@ -139,7 +159,6 @@ class eKYC extends Contract {
 
         // Check caller is who registered
         if (clientData.whoRegistered.ledgerUser !== callerId) {
-
             // If caller is not who registered, check if caller is approved
             const relations = await this.getRelationByFi(ctx, callerId);
             if (!relations.includes(clientId)) {
@@ -324,6 +343,82 @@ class eKYC extends Contract {
         }
         console.info(allResults);
         return JSON.stringify(allResults);
+    }
+
+    /**
+       * registerFI registers a FI's Public Identity (DID Document) on the ledger.
+       * @param {Context} ctx The transaction context
+       * @param {String} fiDid The DID of the FI (e.g., "did:fabric:org1")
+       * @param {String} publicKeyJwk The Public Key in JWK string format
+       */
+    async registerFI(ctx, fiDid, publicKeyJwk) {
+        const cid = new ClientIdentity(ctx.stub);
+
+        // 1. CHECK: Is the user an Admin?
+        // We check the 'hf.Registrar.Attributes' or look for 'admin' in the Distinguished Name (DN)
+        const x509Identifier = cid.getID();
+        if (!x509Identifier.toLowerCase().includes('admin')) {
+            throw new Error('Unauthorized: Only administrative identities can register a Bank.');
+        }
+
+        // 2. CHECK: Does the DID match the caller's MSP?
+        // If caller is from Org1MSP, they should only register did:fabric:org1
+        const callerMspId = cid.getMSPID(); // e.g., "Org1MSP"
+        const expectedOrgSuffix = callerMspId.toLowerCase().replace('msp', ''); // "org1"
+
+        if (!fiDid.endsWith(expectedOrgSuffix)) {
+            throw new Error(`Forbidden: ${callerMspId} cannot register a DID for ${fiDid}`);
+        }
+
+        // 3. STORAGE: Save the FI Identity (DID Document)
+        const fiIdentity = {
+            docType: 'fiIdentity',
+            did: fiDid,
+            mspId: callerMspId,
+            publicKeyJwk: JSON.parse(publicKeyJwk),
+            status: 'ACTIVE',
+            updatedAt: ctx.stub.getTxTimestamp().seconds.low
+        };
+
+        // Use the fiDid as the key so it's easily resolvable by other FI
+        await ctx.stub.putState(fiDid, Buffer.from(JSON.stringify(fiIdentity)));
+
+        console.info(`FI Registered: ${fiDid}`);
+    }
+
+    /**
+     * getDidDocument allows FI 2 to resolve F1 1's public key
+     */
+    async getDidDocument(ctx, did) {
+        const dataBytes = await ctx.stub.getState(did);
+        if (!dataBytes || dataBytes.length === 0) {
+            throw new Error(`The DID Document for ${did} was not found.`);
+        }
+        return dataBytes.toString();
+    }
+
+
+    /**
+ * readAnchor retrieves the credential metadata (hash) for a specific user.
+ * @param {Context} ctx The transaction context
+ * @param {String} userDid The DID of the user (the key used during anchoring)
+ */
+    async readAnchor(ctx, userDid) {
+        const anchorBytes = await ctx.stub.getState(userDid);
+
+        if (!anchorBytes || anchorBytes.length === 0) {
+            throw new Error(`No credential anchor found for user: ${userDid}`);
+        }
+
+        const anchor = JSON.parse(anchorBytes.toString());
+
+        // Security check: Ensure this is actually a credential anchor
+        if (anchor.docType !== 'credentialAnchor') {
+            throw new Error(`The record for ${userDid} is not a valid credential anchor.`);
+        }
+
+        // Return the anchor object (containing the hash, issuer, and status)
+        return anchor;
     }
 }
 

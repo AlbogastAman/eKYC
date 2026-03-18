@@ -1,0 +1,197 @@
+const { createJWT } = require('did-jwt');
+const crypto = require('node:crypto');
+const { buildPoseidon } = require('circomlibjs');
+const path = require('path');
+const fs = require('fs');
+const { derToJose } = require('ecdsa-sig-formatter');
+const networkConnection = require('./networkConnection');
+const { Resolver } = require('did-resolver');
+
+/**
+ * Retrieves the actual Fabric Private Key of an orginisation.
+ * @param {string} orgName - The name of the identity (e.g., 'org1').
+ */
+
+const getIssuerKeys = async (orgName) => {
+    // Navigate to the Peer Organizations folder
+    const baseDir = path.resolve(__dirname, '../../test-network/organizations/peerOrganizations');
+    const orgDir = `${orgName}.example.com`;
+
+    const certPath = path.join(baseDir, orgDir, `users/Admin@${orgDir}/msp/signcerts/cert.pem`);
+    const keystoreDir = path.join(baseDir, orgDir, `users/Admin@${orgDir}/msp/keystore`);
+
+    // The private key filename is a random hash ending in _sk
+    const files = fs.readdirSync(keystoreDir);
+    const privateKeyPath = path.join(keystoreDir, files.find(f => f.endsWith('_sk')));
+
+    return {
+        issuerDid: `did:fabric:${orgName}`, // e.g. did:fabric:org1
+        privateKey: fs.readFileSync(privateKeyPath, 'utf8'),
+        certificate: fs.readFileSync(certPath, 'utf8')
+    };
+};
+
+
+const createVC = async ({ id, claims, issuer, keys, salts }) => {
+    // 1. Load the PEM safely
+    const privateKeyObject = crypto.createPrivateKey({
+        key: keys.privateKey,
+        format: 'pem',
+        type: 'pkcs8'
+    });
+
+    /**
+     * 2. Fixed Signer
+     * Node's crypto signs in DER format by default. 
+     * We use derToJose to convert it to the format did-jwt needs for ES256.
+     */
+    const signer = (data) => {
+
+        // Ensure data is a Buffer
+        const dataBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+
+        // Sign using the private key
+        const derSignature = crypto.sign("SHA256", dataBuffer, privateKeyObject);
+
+        // IMPORTANT: ES256 signatures must be exactly 64 bytes (R + S)
+        // If your derToJose is custom, ensure it handles the R and S padding correctly
+        return derToJose(derSignature, 'ES256');
+
+    };
+
+    // 3. Poseidon Setup
+    const poseidon = await buildPoseidon();
+
+    /**
+     * Converts alphanumeric strings (e.g., "ALN123") to a BigInt via ASCII bytes.
+     * Use this for ID Numbers or names.
+     */
+    const textToBigInt = (str) =>
+        str ? BigInt('0x' + Buffer.from(str.toString()).toString('hex')) : BigInt(0);
+
+    /**
+     * Converts numeric strings (e.g., "20040617") to a literal BigInt.
+     * Use this for Dates and Country Codes so they can be compared in circuits.
+     */
+    const numToBigInt = (str) =>
+        str ? BigInt(str.toString().replace(/\D/g, '')) : BigInt(0);
+
+    // 1. DOB: Hashed as a PURE NUMBER (e.g., 20040617)
+    const dobValue = numToBigInt(claims.dateOfBirth);
+    const dobHash = poseidon.F.toString(
+        poseidon([dobValue, BigInt("0x" + salts.dateOfBirth)])
+    );
+
+    // 2. ID Number: Hashed as TEXT BYTES (e.g., "ALN123" -> 71790443442723)
+    const idValue = textToBigInt(claims.idNumber);
+    const idHash = poseidon.F.toString(
+        poseidon([idValue, BigInt("0x" + salts.idNumber)])
+    );
+
+    // 3. Country: Hashed as a PURE NUMBER (e.g., 834)
+    const countryValue = numToBigInt(claims.country);
+    const countryHash = poseidon.F.toString(
+        poseidon([countryValue, BigInt("0x" + salts.country)])
+    );
+
+    // 4. Build Payload
+    const payload = {
+        sub: id,
+        iss: issuer,
+        iat: Math.floor(Date.now() / 1000),
+        vc: {
+            "@context": ["https://www.w3.org/2018/credentials/v1"],
+            "type": ["VerifiableCredential", "IdentityCredential"],
+            "credentialSubject": {
+                "id": id,
+                "name": claims.name,
+                "address": claims.address,
+                "zkProofs": {
+                    "dateOfBirthHash": dobHash,
+                    "idNumberHash": idHash,
+                    "countryHash": countryHash
+                }
+            }
+        }
+    };
+
+    // 5. Create JWT (alg must be ES256 to match the Fabric key)
+    const token = await createJWT(
+        payload,
+        { issuer: issuer, signer },
+        {
+            alg: 'ES256',
+            typ: 'JWT',
+            kid: `${issuer}#key-1`
+        }
+    );
+
+    return { jwt: token, salts };
+};
+
+
+/**
+ * Creates a DID Resolver that uses the Fabric ledger.
+ * @param {string} orgNumber - The org performing the query (e.g., '2')
+ * @param {string} userName - The identity in the wallet (e.g., 'admin')
+ */
+const createFabricResolver = (orgNumber, userName) => {
+
+    // Helper to ensure coordinates are Base64URL compliant (no +, /, or =)
+    const fixBase64Url = (str) => {
+        return str
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+    };
+
+    return new Resolver({
+        fabric: async (did) => {
+            // Use your existing evaluateTransaction utility
+            const fiDataBuffer = await networkConnection.evaluateTransaction(
+                'getDidDocument',
+                orgNumber,
+                userName,
+                [did] // The DID we are looking up (e.g., "did:fabric:org1")
+            );
+
+            const fiDoc = JSON.parse(fiDataBuffer.toString());
+
+            // Ensure x and y are clean Base64URL strings
+            const cleanX = fixBase64Url(fiDoc.publicKeyJwk.x);
+            const cleanY = fixBase64Url(fiDoc.publicKeyJwk.y);
+
+            // // --- ADD LOGS HERE ---
+            // console.log("--- DEBUGGING RESOLVER ---");
+            // console.log("DID being resolved:", did);
+            // console.log("X coordinate:", cleanX);
+            // console.log("X length:", cleanX.length);
+            // console.log("Y length:", cleanY.length);
+            // // ---------------------
+
+            return {
+                didDocument: {
+                    id: did,
+                    verificationMethod: [{
+                        id: `${did}#key-1`,
+                        type: 'JsonWebKey2020',
+                        controller: did,
+                        publicKeyJwk: {
+                            kty: 'EC',
+                            crv: 'P-256',
+                            x: cleanX,
+                            y: cleanY
+                        }
+                    }],
+                    assertionMethod: [`${did}#key-1`]
+                }
+            };
+        }
+    });
+};
+
+module.exports = {
+    createVC,
+    getIssuerKeys,
+    createFabricResolver,
+};

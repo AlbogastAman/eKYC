@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="snarkjs.min.js"></script>
+</head>
+
+<body>
+    <script>
+        async function generateZKProof(inputs) {
+            try {
+                // Generate the proof using snarkjs
+                const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                    inputs,
+                    "requirements_check.wasm",
+                    "requirements_check_final.zkey"
+                );
+
+                // Send result back to Flutter
+                ProofChannel.postMessage(JSON.stringify({
+                    success: true,
+                    proof: proof,
+                    publicSignals: publicSignals
+                }));
+            } catch (err) {
+                ProofChannel.postMessage(JSON.stringify({
+                    success: false,
+                    error: err.toString()
+                }));
+            }
+        }
+
+        async function generateZKProofDirect(inputsJson, wasmBase64, zkeyBase64) {
+            try {
+                const inputs = JSON.parse(inputsJson);
+
+                // Convert Base64 back to Uint8Array
+                const wasmUint8 = Uint8Array.from(atob(wasmBase64), c => c.charCodeAt(0));
+                const zkeyUint8 = Uint8Array.from(atob(zkeyBase64), c => c.charCodeAt(0));
+
+                // Generate proof using the arrays directly
+                const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                    inputs,
+                    wasmUint8,
+                    zkeyUint8
+                );
+
+                ProofChannel.postMessage(JSON.stringify({
+                    success: true,
+                    proof: proof,
+                    publicSignals: publicSignals
+                }));
+            } catch (err) {
+                ProofChannel.postMessage(JSON.stringify({
+                    success: false,
+                    error: err.toString()
+                }));
+            }
+        }
+    </script>
+</body>
+</html>

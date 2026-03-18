@@ -1,0 +1,7 @@
+{
+  "index": {
+    "fields": ["did"]
+  },
+  "name": "indexDID",
+  "type": "json"
+}

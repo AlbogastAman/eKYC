@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const networkConnection = require('../utils/networkConnection');
 
+const io = require('../db/io');
+
 exports.login = async (req, res) => {
 
     const { login, password, userType } = req.body;
@@ -35,8 +37,7 @@ exports.login = async (req, res) => {
 
 exports.getClientData = (req, res) => {
 
-    const fields = ['name', 'address', 'dateOfBirth', 'idNumber', 'whoRegistered'];
-
+    const fields = ['did', 'name', 'address', 'whoRegistered'];
     networkConnection
         .evaluateTransaction('getClientData', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fields || []])
         .then(result => {
@@ -53,14 +54,28 @@ exports.getClientData = (req, res) => {
         });
 };
 
+exports.getClientRequests = async (req, res) => {
+    try {
+        const data = await io.getRequestsByClient(req.cookies.ledgerId, req.query.status);
+        // If it succeeds, send the JSON response
+        return res.json(data);
+    } catch (err) {
+        // If the controller 'throws' an error, it ends up here
+        console.error("Route Error:", err);
+        return res.status(500).send(err.message || "Internal Server Error");
+    }
+};
+
 exports.approve = async (req, res) => {
 
     const { fiId } = req.body;
+    const { reqId } = req.params;
 
     networkConnection
         .submitTransaction('approve', req.orgNum, req.ledgerUser, [req.cookies.ledgerId, fiId])
-        .then(result => {
+        .then(async result => {
             if (result) {
+                await io.approveIdentityRequest(reqId);
                 return res.json({ message: `Financial Institution ${fiId} approved by ${req.cookies.ledgerId}` });
             }
             return res.status(500).json({ error: 'Something went wrong' });

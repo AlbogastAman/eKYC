@@ -17,7 +17,12 @@ router.get('/getClientData',
     credentials.getWhoRegistered,
     clientController.getClientData);
 
-router.post('/approve',
+router.get('/getClientRequests',
+    checkLogin,
+    credentials.getWhoRegistered,
+    clientController.getClientRequests);
+
+router.post('/approve/:reqId',
     checkLogin,
     credentials.getWhoRegistered,
     clientController.approve);

@@ -1,9 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Flex, Box, Card, Heading, Text, Form, Field, Button, Loader } from 'rimble-ui';
-
+import { QRCodeCanvas } from 'qrcode.react';
 import qs from 'qs';
-
 import api from '../../service/api';
 
 const Login = () => {
@@ -16,6 +15,13 @@ const Login = () => {
     const [submitDisabled, setSubmitDisabled] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [newClientMsg, setNewClientMsg] = useState('');
+    const [showQR, setShowQR] = useState(false);
+    const [qrData, setQrData] = useState(null);
+
+    function resetInputs() {
+        setShowQR(false);
+        setClientData({});
+    };
 
     function handleName(e) {
         setClientData({ ...clientData, name: e.target.value });
@@ -31,6 +37,10 @@ const Login = () => {
 
     function handleIdNumber(e) {
         setClientData({ ...clientData, idNumber: e.target.value });
+    };
+
+    function handleCounrty(e) {
+        setClientData({ ...clientData, country: e.target.value });
     };
 
     function handleLogin(e) {
@@ -52,6 +62,7 @@ const Login = () => {
                 clientData.address && clientData.address.length > 0 &&
                 clientData.dateOfBirth && clientData.dateOfBirth.length > 0 &&
                 clientData.idNumber && clientData.idNumber.length > 0 &&
+                clientData.country && clientData.country.length > 0 &&
                 clientData.login && clientData.login.length > 0 &&
                 clientData.password && clientData.password.length > 5 &&
                 clientData.password === confirmPassword &&
@@ -80,6 +91,13 @@ const Login = () => {
                         console.log(res);
                         if (res.status === 200) {
                             setNewClientMsg(res.data.message);
+                            // 👇 Data you want inside QR
+                            let {
+                                message, txId, ...payload
+                            } = res.data;
+
+                            setQrData(payload);
+                            setShowQR(true);
                         } else {
                             console.log('Oopps... something wrong, status code ' + res.status);
                             return function cleanup() { }
@@ -171,6 +189,20 @@ const Login = () => {
                                     />
                                 </Field>
                             </Box>
+                            <Box width={1} px={3}>
+                                <Field label="Country" width={1}>
+                                    <select
+                                        required
+                                        onChange={handleCounrty}
+                                        value={clientData.country}
+                                        style={{ width: '100%', padding: '8px' }}
+                                    >
+                                        <option value="">Select Country</option>
+                                        <option value="834">Tanzania</option>
+                                        <option value="826">United Kingdom</option>
+                                    </select>
+                                </Field>
+                            </Box>
                         </Flex>
                     </Card>
                     <Card>
@@ -215,11 +247,41 @@ const Login = () => {
                                     {isLoading ? <Loader color="white" /> : <p>Register new client</p>}
                                 </Button>
                             </Box>
-                            {newClientMsg &&
-                                <Box px={3}>
-                                    <Text>{newClientMsg}</Text>
+                            {showQR && (
+                                <Box
+                                    style={{
+                                        position: 'fixed',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        backgroundColor: 'rgba(0,0,0,0.6)',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        zIndex: 9999
+                                    }}
+                                >
+                                    <Card p={4} width={[1, 1 / 2]} textAlign="center">
+                                        <Heading as="h3" mb={3}>Client Created Successfully</Heading>
+
+                                        {qrData && (
+                                            <QRCodeCanvas
+                                                value={JSON.stringify(qrData)}
+                                                size={220}
+                                            />
+                                        )}
+
+                                        <Text mt={3}>
+                                            Present this QR to the Client,the client must use the eKYC app to store VC generated.
+                                        </Text>
+
+                                        <Button mt={3} onClick={() => resetInputs()}>
+                                            Close
+                                        </Button>
+                                    </Card>
                                 </Box>
-                            }
+                            )}
                         </Flex>
                     </Card>
                 </Form>

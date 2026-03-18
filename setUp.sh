@@ -40,4 +40,6 @@ node enrollAdmin.js 2 admin2
 node registerUser.js 1 admin1 FI1
 node registerUser.js 2 admin2 FI2
 node populate.js 1 FI1
+node registerOrg.js org1 admin1 1
+node registerOrg.js org2 admin2 2
 popd
