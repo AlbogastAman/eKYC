@@ -5,7 +5,6 @@ import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 import { BASE_URL, FI_COOKIES, options as baseOptions } from "./configs.js";
 
 export const options = {
-    // ...baseOptions,
     thresholds: baseOptions.thresholds,
     scenarios: {
         // 1. Write Task: Ledger Consensus (Medium Latency)

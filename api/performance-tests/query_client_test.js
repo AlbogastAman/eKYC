@@ -6,8 +6,8 @@ import { BASE_URL, FI_COOKIES, options } from "./configs.js";
 export { options };
 
 // 1. Load the IDs created by the previous script
-// SharedArray is efficient: it only loads the file once for all VUs
 const clientIds = new SharedArray('created clients', function () {
+    
     const data = JSON.parse(open('./created_ids.json'));
 
     // Safety check: if file is empty, provide a fallback to prevent crash

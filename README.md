@@ -160,6 +160,12 @@ Finally run the frontend application:
 # Run the project
 npm start
 ```
+Finally run the mobile application:
+``` sh
+# Run in a release mode
+
+flutter run --release
+```
 
 If you want to stop the network and delete all artifacts created, just run the next magic script below:
 

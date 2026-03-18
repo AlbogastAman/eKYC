@@ -59,14 +59,7 @@ const createVC = async ({ id, claims, issuer, keys, salts }) => {
 
     };
 
-    // 3. Poseidon Setup (unchanged)
-    // const poseidon = await buildPoseidon();
-    // const toBigInt = (str) => str ? BigInt('0x' + Buffer.from(str).toString('hex')) : BigInt(0);
-
-    // const dobHash = poseidon.F.toString(poseidon([toBigInt(claims.dateOfBirth.toString().replaceAll('-', '')), BigInt("0x" + salts.dateOfBirth)]));
-    // const idHash = poseidon.F.toString(poseidon([toBigInt(claims.idNumber), BigInt("0x" + salts.idNumber)]));
-    // const countryHash = poseidon.F.toString(poseidon([toBigInt(claims.country), BigInt("0x" + salts.country)]));
-
+    // 3. Poseidon Setup
     const poseidon = await buildPoseidon();
 
     /**
@@ -168,13 +161,13 @@ const createFabricResolver = (orgNumber, userName) => {
             const cleanX = fixBase64Url(fiDoc.publicKeyJwk.x);
             const cleanY = fixBase64Url(fiDoc.publicKeyJwk.y);
 
-            // --- ADD LOGS HERE ---
-            console.log("--- DEBUGGING RESOLVER ---");
-            console.log("DID being resolved:", did);
-            console.log("X coordinate:", cleanX);
-            console.log("X length:", cleanX.length);
-            console.log("Y length:", cleanY.length);
-            // ---------------------
+            // // --- ADD LOGS HERE ---
+            // console.log("--- DEBUGGING RESOLVER ---");
+            // console.log("DID being resolved:", did);
+            // console.log("X coordinate:", cleanX);
+            // console.log("X length:", cleanX.length);
+            // console.log("Y length:", cleanY.length);
+            // // ---------------------
 
             return {
                 didDocument: {
