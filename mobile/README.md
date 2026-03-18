@@ -1,3 +1,3 @@
 # ekyc_wallet
 
-A new Flutter project.
+An extension of eKYC Web application
